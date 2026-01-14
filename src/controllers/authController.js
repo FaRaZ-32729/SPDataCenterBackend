@@ -2,7 +2,7 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
-const organizationModel = require("../models/organizationModel");
+const organizationModel = require("../models/DataCenterModel");
 const venueModel = require("../models/venueModal");
 const dotenv = require("dotenv");
 
@@ -14,15 +14,11 @@ const registerAdmin = async (req, res) => {
         const { name, email, password } = req.body;
         if (!name || !email, !password) return res.status(400).json({ message: "All Fields Are Required" });
 
-        const passwordRegex =
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-        if (!passwordRegex.test(password)) {
-            return res.status(400).json({
-                message:
-                    "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.",
-            });
-        };
+        // Use reusable password validator
+        const { valid, message } = validatePassword(password);
+        if (!valid) {
+            return res.status(400).json({ message });
+        }
 
         const existingUser = await userModel.findOne({ email });
         if (existingUser) return res.status(400).json({ message: "User Already Exists" });

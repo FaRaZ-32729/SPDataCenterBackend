@@ -4,8 +4,7 @@ const userSchema = new mongoose.Schema({
     name: { type: String },
     email: { type: String, required: true, unique: true },
     password: { type: String },
-    role: { type: String, enum: ["admin", "user"], default: "user" },
-    organization: { type: mongoose.Schema.Types.ObjectId, ref: 'Organization' },
+    role: { type: String, enum: ["admin", "manager", "user"], default: "user" },
     isActive: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
     suspensionReason: { type: String, default: "" },
@@ -16,7 +15,6 @@ const userSchema = new mongoose.Schema({
     resetTokenExpiry: { type: Date, default: null },
     createdBy: { type: String, required: true },
     creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
-    venues: [{ venueId: { type: mongoose.Schema.Types.ObjectId, ref: "Venue" }, venueName: { type: String } }]
 
 }, { timestamps: true });
 

@@ -1,5 +1,5 @@
 const deviceModel = require("../models/deviceModel");
-const organizationModel = require("../models/organizationModel");
+const organizationModel = require("../models/DataCenterModel");
 const venueModel = require("../models/venueModal");
 
 const createDevice = async (req, res) => {

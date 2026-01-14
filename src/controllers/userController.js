@@ -1,7 +1,7 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../utils/sendEmail");
-const organizationModel = require("../models/organizationModel");
+const organizationModel = require("../models/DataCenterModel");
 const mongoose = require("mongoose");
 const venueModel = require("../models/venueModal");
 

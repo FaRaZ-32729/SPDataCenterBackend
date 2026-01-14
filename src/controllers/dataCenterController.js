@@ -1,42 +1,42 @@
-const orgModel = require("../models/organizationModel");
+const DataCenterModel = require("../models/DataCenterModel");
 const userModel = require("../models/userModel");
 
-// create organization
-const createOrganization = async (req, res) => {
+// create DataCenter
+const createDataCenter = async (req, res) => {
     try {
         let { name } = req.body;
 
         if (!name) {
-            return res.status(400).json({ message: "Sector name is required" });
+            return res.status(400).json({ message: "DataCenter name is required" });
         }
 
         name = name.trim().toLowerCase();
 
-        const existingOrg = await orgModel.findOne({ name });
+        const existingOrg = await DataCenterModel.findOne({ name });
         if (existingOrg) {
-            return res.status(400).json({ message: "Sector already exists" });
+            return res.status(400).json({ message: "DataCenter already exists" });
         }
 
-        const org = await orgModel.create({ name });
+        const org = await DataCenterModel.create({ name });
 
         res.status(201).json({
-            message: "Sector created successfully",
+            message: "DataCenter created successfully",
             organization: org,
         });
     } catch (err) {
         console.error("Error creating organization:", err);
         res.status(500).json({
-            message: "Internal Server Error while creating sector",
+            message: "Internal Server Error while creating DataCenter",
         });
     }
 };
 
-// get organizations
-const getOrganizations = async (req, res) => {
+// get DataCenter
+const getDataCenter = async (req, res) => {
     try {
-        const orgs = await orgModel.find();
+        const orgs = await DataCenterModel.find();
 
-        if (!orgs) return res.status(404).json({ message: "No Sector Found" });
+        if (!orgs) return res.status(404).json({ message: "No DataCenter Found" });
 
         res.status(200).json(orgs);
     } catch (error) {
@@ -45,36 +45,36 @@ const getOrganizations = async (req, res) => {
     }
 };
 
-// get single organization  
-const getOrganizationById = async (req, res) => {
+// get single DataCenter  
+const getDataCenterById = async (req, res) => {
     try {
         const { id } = req.params;
 
         if (!id) {
-            return res.status(400).json({ message: "Sector ID is required" });
+            return res.status(400).json({ message: "DataCenter ID is required" });
         }
 
-        const org = await orgModel.findById(id);
+        const org = await DataCenterModel.findById(id);
 
         if (!org) {
-            return res.status(404).json({ message: "Sector not found" });
+            return res.status(404).json({ message: "DataCenter not found" });
         }
 
         res.status(200).json({
-            message: "Sector fetched successfully",
+            message: "DataCenter fetched successfully",
             organization: org,
         });
 
     } catch (err) {
         console.error("Error fetching organization by ID:", err);
         res.status(500).json({
-            message: "Internal Server Error while fetching sector",
+            message: "Internal Server Error while fetching DataCenter",
         });
     }
 };
 
 // get organization by user id
-const getOrganizationByUserId = async (req, res) => {
+const getDataCenterByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
 
@@ -91,92 +91,92 @@ const getOrganizationByUserId = async (req, res) => {
 
         // Check if user has an organization
         if (!user.organization) {
-            return res.status(404).json({ message: "This user does not belong to any sector" });
+            return res.status(404).json({ message: "This user does not belong to any DataCenter" });
         }
 
         // Return populated organization
         res.status(200).json({
-            message: "sector fetched successfully",
+            message: "DataCenter fetched successfully",
             organization: user.organization,
         });
 
     } catch (err) {
         console.error("Error fetching organization by user ID:", err);
         res.status(500).json({
-            message: "Internal Server Error while fetching sector by user ID",
+            message: "Internal Server Error while fetching DataCenter by user ID",
         });
     }
 };
 
 
 // update organizations
-const updateOrganization = async (req, res) => {
+const updateDataCenter = async (req, res) => {
     try {
         const { id } = req.params;
         let { name } = req.body;
 
         if (!id) {
-            return res.status(400).json({ message: "Sector ID is required" });
+            return res.status(400).json({ message: "DataCenter ID is required" });
         }
 
         if (!name) {
-            return res.status(400).json({ message: "Sector name is required" });
+            return res.status(400).json({ message: "DataCenter name is required" });
         }
 
         name = name.trim().toLowerCase();
 
-        const existingOrg = await orgModel.findOne({ name });
+        const existingOrg = await DataCenterModel.findOne({ name });
         if (existingOrg && existingOrg._id.toString() !== id) {
-            return res.status(400).json({ message: "Another sector with this name already exists" });
+            return res.status(400).json({ message: "Another DataCenter with this name already exists" });
         }
 
-        const org = await orgModel.findByIdAndUpdate(
+        const org = await DataCenterModel.findByIdAndUpdate(
             id,
             { name },
             { new: true, runValidators: true }
         );
 
         if (!org) {
-            return res.status(404).json({ message: "Sector not found" });
+            return res.status(404).json({ message: "DataCenter not found" });
         }
 
         res.status(200).json({
-            message: "Sector updated successfully",
+            message: "DataCenter updated successfully",
             organization: org,
         });
     } catch (err) {
         console.error("Error updating organization:", err);
         res.status(500).json({
-            message: "Internal Server Error while updating sector",
+            message: "Internal Server Error while updating DataCenter",
         });
     }
 };
 
 // delete organizations by id
-const deleteOrganization = async (req, res) => {
+const deleteDataCenter = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const org = await orgModel.findById(id);
+        const org = await DataCenterModel.findById(id);
         if (!org) {
-            return res.status(404).json({ message: "Sector not found" });
+            return res.status(404).json({ message: "DataCenter not found" });
         }
 
-        await orgModel.findByIdAndDelete(id);
+        await DataCenterModel.findByIdAndDelete(id);
 
         res.status(200).json({
-            message: "Sector deleted successfully",
+            message: "DataCenter deleted successfully",
             deletedOrganization: org,
         });
 
     } catch (err) {
         console.error("Error deleting organization:", err);
         res.status(500).json({
-            message: "Internal Server Error while deleting Sector",
+            message: "Internal Server Error while deleting DataCenter",
         });
     }
 };
 
 
 
-module.exports = { createOrganization, getOrganizations, updateOrganization, deleteOrganization, getOrganizationById, getOrganizationByUserId }
+module.exports = { createDataCenter, getDataCenter, updateDataCenter, deleteDataCenter, getDataCenterById, getDataCenterByUserId }

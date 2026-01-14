@@ -8,7 +8,7 @@ const http = require("http");
 
 // Routers
 const userRouter = require("./src/routes/userRouter");
-const orgRouter = require("./src/routes/organizationRouter");
+const dataCenterRouter = require("./src/routes/dataCenterRouter");
 const authRouter = require("./src/routes/authRouter");
 const venueRouter = require("./src/routes/venueRouter");
 const deviceRouter = require("./src/routes/deviceRouter");
@@ -21,7 +21,7 @@ const { espAlertSocket } = require("./src/utils/espAlertSocket");
 
 dotenv.config();
 dbConnection();
-const port = process.env.PORT || 5052;
+const port = process.env.PORT || 5053;
 const app = express();
 const server = http.createServer(app);
 
@@ -46,23 +46,19 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use(
-    "/assets",
-    express.static(path.join(__dirname, "./assets"))
-);
+app.use("/assets", express.static(path.join(__dirname, "./assets")));
 
 
 // Routes
 app.use("/users", userRouter);
 app.use("/auth", authRouter);
-app.use("/organization", authenticate, orgRouter);
+app.use("/data-center", dataCenterRouter);
 app.use("/venue", authenticate, venueRouter);
 app.use("/device", authenticate, deviceRouter);
 app.use("/alert", authenticate, alertsRouter);
 
 app.get("/", (req, res) => {
-    res.send("Hellow FaRaZ To IOTFIY-PoleKit Server ");
+    res.send("Hellow FaRaZ To IOTFIY-SindhPolice-DataCenter Server");
 });
 
 
@@ -83,4 +79,4 @@ server.on("upgrade", (req, socket, head) => {
 // Start server
 server.listen(port, () => {
     console.log(`Express & WebSocket is running on port : ${port}`);
-})
+});

@@ -1,4 +1,4 @@
-const organizationModel = require("../models/organizationModel");
+const organizationModel = require("../models/DataCenterModel");
 const userModel = require("../models/userModel");
 const venueModel = require("../models/venueModal");
 const mongoose = require("mongoose");
