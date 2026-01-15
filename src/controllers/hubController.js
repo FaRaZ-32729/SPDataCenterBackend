@@ -88,4 +88,154 @@ const createHub = async (req, res) => {
     }
 };
 
-module.exports = { createHub };
+
+// 2️⃣ Get All Hubs
+const getAllHubs = async (req, res) => {
+    try {
+        // Fetch all hubs with their datacenter names
+        const hubs = await HubModel.find()
+            .populate("dataCenterId", "name")
+            .lean();
+
+        if (!hubs || hubs.length === 0) {
+            return res.status(404).json({ message: "Hubs Not Found" });
+        }
+
+        // Fetch sensors for each hub
+        const hubsWithSensors = await Promise.all(
+            hubs.map(async (hub) => {
+                const sensors = await SensorModel.find({ hubId: hub._id }, "_id sensorName").lean();
+                return {
+                    ...hub,
+                    sensors, // attach sensors array
+                };
+            })
+        );
+
+        return res.status(200).json(hubsWithSensors);
+    } catch (err) {
+        console.error("Get All Hubs Error:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+// 3️⃣ Get Single Hub
+const getHubById = async (req, res) => {
+    try {
+        const { hubId } = req.params;
+        const hub = await HubModel.findById(hubId).populate("dataCenterId", "name").lean();
+        if (!hub) return res.status(404).json({ message: "Hub not found" });
+
+        const sensors = await SensorModel.find({ hubId }, "_id sensorName").lean();
+        hub.sensors = sensors;
+
+        return res.status(200).json(hub);
+    } catch (err) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// 4️⃣ Get Hubs by DataCenter ID
+const getHubsByDataCenter = async (req, res) => {
+    try {
+        const { dataCenterId } = req.params;
+
+        // Fetch all hubs for the given data center
+        const hubs = await HubModel.find({ dataCenterId }).lean();
+        if (!hubs || hubs.length === 0) {
+            return res.status(404).json({ message: "Hubs Not Found" });
+        }
+
+        // Fetch sensors for each hub (only _id and sensorName)
+        const hubsWithSensors = await Promise.all(
+            hubs.map(async (hub) => {
+                const sensors = await SensorModel.find({ hubId: hub._id }, "_id sensorName").lean();
+                return {
+                    ...hub,
+                    sensors,
+                };
+            })
+        );
+
+        return res.status(200).json(hubsWithSensors);
+    } catch (err) {
+        console.error("Get Hubs By DataCenter Error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// 5️⃣ Update Hub
+const updateHub = async (req, res) => {
+    try {
+        const { hubId } = req.params;
+        const { name, sensorNames } = req.body; // optional updates
+
+        const hub = await HubModel.findById(hubId);
+        if (!hub) return res.status(404).json({ message: "Hub not found" });
+
+        let regenerateApiKey = false;
+
+        // Update hub name
+        if (name && name !== hub.name) {
+            const exists = await HubModel.findOne({
+                dataCenterId: hub.dataCenterId,
+                name,
+                _id: { $ne: hubId },
+            });
+            if (exists)
+                return res
+                    .status(409)
+                    .json({ message: "Hub with this name already exists in this data center" });
+
+            hub.name = name;
+            regenerateApiKey = true;
+        }
+
+        // Update sensors if provided
+        if (sensorNames && Array.isArray(sensorNames)) {
+            // Delete old sensors
+            await SensorModel.deleteMany({ hubId });
+
+            // Create new sensors
+            const sensors = sensorNames.map((s) => ({ hubId, sensorName: s }));
+            await SensorModel.insertMany(sensors);
+
+            hub.sensorQuantity = sensorNames.length;
+            regenerateApiKey = true;
+        }
+
+        // Regenerate API key if hub name or sensors canhged
+        if (regenerateApiKey) {
+            hub.apiKey = generateApiKey(hub.name, hub.sensorQuantity);
+        }
+
+        await hub.save();
+        res.status(200).json({ message: "Hub updated", hub });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// 6️⃣ Delete Hub
+const deleteHub = async (req, res) => {
+    try {
+        const { hubId } = req.params;
+        const hub = await HubModel.findById(hubId);
+        if (!hub) return res.status(404).json({ message: "Hub not found" });
+
+        // Delete all sensors first
+        await SensorModel.deleteMany({ hubId });
+
+        // Delete hub
+        await hub.deleteOne();
+
+        res.status(200).json({ message: "Hub and its sensors deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+
+module.exports = { createHub, getAllHubs, getHubById, getHubsByDataCenter, updateHub, deleteHub };

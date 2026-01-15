@@ -12,19 +12,19 @@ const createDataCenter = async (req, res) => {
 
         name = name.trim().toLowerCase();
 
-        const existingOrg = await DataCenterModel.findOne({ name });
-        if (existingOrg) {
+        const existingDC = await DataCenterModel.findOne({ name });
+        if (existingDC) {
             return res.status(400).json({ message: "DataCenter already exists" });
         }
 
-        const org = await DataCenterModel.create({ name });
+        const dc = await DataCenterModel.create({ name });
 
         res.status(201).json({
             message: "DataCenter created successfully",
-            organization: org,
+            datacenter: dc,
         });
     } catch (err) {
-        console.error("Error creating organization:", err);
+        console.error("Error creating DataCenter:", err);
         res.status(500).json({
             message: "Internal Server Error while creating DataCenter",
         });
@@ -34,11 +34,11 @@ const createDataCenter = async (req, res) => {
 // get DataCenter
 const getDataCenter = async (req, res) => {
     try {
-        const orgs = await DataCenterModel.find();
+        const datacenter = await DataCenterModel.find();
 
-        if (!orgs) return res.status(404).json({ message: "No DataCenter Found" });
+        if (!datacenter) return res.status(404).json({ message: "No DataCenter Found" });
 
-        res.status(200).json(orgs);
+        res.status(200).json(datacenter);
     } catch (error) {
         console.log("error to fetch organizations");
         return res.status(500).json({ message: "Server Error" });
@@ -54,26 +54,26 @@ const getDataCenterById = async (req, res) => {
             return res.status(400).json({ message: "DataCenter ID is required" });
         }
 
-        const org = await DataCenterModel.findById(id);
+        const dc = await DataCenterModel.findById(id);
 
-        if (!org) {
+        if (!dc) {
             return res.status(404).json({ message: "DataCenter not found" });
         }
 
         res.status(200).json({
             message: "DataCenter fetched successfully",
-            organization: org,
+            datacenter: dc,
         });
 
     } catch (err) {
-        console.error("Error fetching organization by ID:", err);
+        console.error("Error fetching DataCenter by ID:", err);
         res.status(500).json({
             message: "Internal Server Error while fetching DataCenter",
         });
     }
 };
 
-// get organization by user id
+// get DataCenter by user id
 const getDataCenterByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
@@ -130,22 +130,22 @@ const updateDataCenter = async (req, res) => {
             return res.status(400).json({ message: "Another DataCenter with this name already exists" });
         }
 
-        const org = await DataCenterModel.findByIdAndUpdate(
+        const dc = await DataCenterModel.findByIdAndUpdate(
             id,
             { name },
             { new: true, runValidators: true }
         );
 
-        if (!org) {
+        if (!dc) {
             return res.status(404).json({ message: "DataCenter not found" });
         }
 
         res.status(200).json({
             message: "DataCenter updated successfully",
-            organization: org,
+            datacenter: dc,
         });
     } catch (err) {
-        console.error("Error updating organization:", err);
+        console.error("Error updating DataCenter:", err);
         res.status(500).json({
             message: "Internal Server Error while updating DataCenter",
         });
@@ -157,8 +157,8 @@ const deleteDataCenter = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const org = await DataCenterModel.findById(id);
-        if (!org) {
+        const dc = await DataCenterModel.findById(id);
+        if (!dc) {
             return res.status(404).json({ message: "DataCenter not found" });
         }
 
@@ -166,11 +166,11 @@ const deleteDataCenter = async (req, res) => {
 
         res.status(200).json({
             message: "DataCenter deleted successfully",
-            deletedOrganization: org,
+            deletedDataCenter: dc,
         });
 
     } catch (err) {
-        console.error("Error deleting organization:", err);
+        console.error("Error deleting DataCenter:", err);
         res.status(500).json({
             message: "Internal Server Error while deleting DataCenter",
         });
