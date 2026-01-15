@@ -235,9 +235,6 @@ const addVenueToUser = async (req, res) => {
     }
 };
 
-
-
-
 // remove a venue form user's venue array
 const removeVenueFromUser = async (req, res) => {
     try {

@@ -2,8 +2,7 @@ const userModel = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendEmail = require("../utils/sendEmail");
-const organizationModel = require("../models/DataCenterModel");
-const venueModel = require("../models/venueModal");
+const DataCenterModel = require("../models/DataCenterModel");
 const dotenv = require("dotenv");
 const { validatePassword } = require("../utils/passwordValidator");
 
@@ -13,7 +12,7 @@ dotenv.config();
 const registerAdmin = async (req, res) => {
     try {
         const { name, email, password } = req.body;
-        if (!name || !email, !password) return res.status(400).json({ message: "All Fields Are Required" });
+        if (!name || !email || !password) return res.status(400).json({ message: "All Fields Are Required" });
 
         // Use reusable password validator
         const { valid, message } = validatePassword(password);
@@ -44,142 +43,267 @@ const registerAdmin = async (req, res) => {
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+// const createUser = async (req, res) => {
+//     try {
+//         const { name, email, role, organizationId, venues } = req.body;
+
+//         if (!name || !email || !role)
+//             return res.status(400).json({ message: "All fields are required" });
+
+//         const creator = req.user; // logged-in user
+
+//         // RULE 1: Only admins OR users that are createdBy: "admin" can create users
+//         if (creator.role === "user" && creator.createdBy === "user") {
+//             return res.status(403).json({ message: "Access Denied: You cannot create users" });
+//         }
+
+//         let finalOrganizationId;
+
+//         // CASE 1: creator already belongs to an org
+//         if (creator.organization) {
+//             finalOrganizationId = creator.organization;
+//         }
+//         // CASE 2: admin must provide organizationId
+//         else {
+//             if (!organizationId) {
+//                 return res.status(400).json({ message: "Organization ID is required" });
+//             }
+
+//             finalOrganizationId = organizationId;
+//         }
+
+//         // Confirm organization exists
+//         const organization = await organizationModel.findById(finalOrganizationId);
+//         if (!organization)
+//             return res.status(404).json({ message: "Organization not found" });
+
+//         // Check duplicate email
+//         const existingEmail = await userModel.findOne({ email });
+//         if (existingEmail)
+//             return res.status(400).json({ message: "User with this email already exists" });
+
+//         /* ---------------- VENUE VALIDATION (ONLY FOR USER CREATED USERS) ---------------- */
+//         let assignedVenues = [];
+
+//         if (creator.role === "user") {
+//             if (!venues || venues.length === 0) {
+//                 return res.status(400).json({
+//                     message: "You must assign at least one venue"
+//                 });
+//             }
+
+//             // Validate venues belong to same organization
+//             const validVenues = await venueModel.find({
+//                 _id: { $in: venues },
+//                 organization: creator.organization
+//             });
+
+//             if (validVenues.length !== venues.length) {
+//                 return res.status(400).json({
+//                     message: "One or more venues are invalid or not in your organization"
+//                 });
+//             }
+
+//             // assignedVenues = venues;
+//             assignedVenues = validVenues.map(v => ({
+//                 venueId: v._id,
+//                 venueName: v.name
+//             }));
+//         }
+
+//         /* ---------------- SETUP PASSWORD TOKEN ---------------- */
+//         const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+//         /* ---------------- CREATE USER ---------------- */
+//         const newUser = await userModel.create({
+//             name,
+//             email,
+//             role,
+//             organization: finalOrganizationId,
+//             venues: assignedVenues,
+//             createdBy: creator.role,
+//             creatorId: creator._id,
+//             setupToken: token,
+//             isActive: false,
+//             isVerified: false,
+//         });
+
+//         /* ---------------- SEND SETUP EMAIL ---------------- */
+//         const setupLink = `${process.env.FRONTEND_URL}/setup-password/${token}`;
+
+//         await sendEmail(
+//             newUser.email,
+//             "Set up your SmartVolt account",
+//             `
+//             <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
+//                 <div style="text-align: center;">
+//                     <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
+//                 </div>
+//                 <h2 style="color: #0055a5;">Welcome to SmartVolt!</h2>
+//                 <p>Hello <b>${newUser.name || newUser.email}</b>,</p>
+//                 <p>Your account has been created. Please click below to set your password:</p>
+
+//                 <div style="text-align: center; margin: 20px 0;">
+//                     <a href="${setupLink}"
+//                        style="background-color: #0055a5; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-size: 16px;">
+//                        Set Password
+//                     </a>
+//                 </div>
+
+//                 <p style="font-size: 14px; color: #555;">
+//                     This link will expire in 24 hours. If you didn't expect this email, ignore it.
+//                 </p>
+//                 <hr/>
+//                 <p style="font-size: 12px; text-align: center; color: #888;">
+//                     © ${new Date().getFullYear()} IOTFIY Solutions. All rights reserved.
+//                 </p>
+//             </div>
+//             `
+//         );
+
+//         /* ---------------- RESPONSE WITH POPULATION ---------------- */
+//         const populatedUser = await userModel
+//             .findById(newUser._id)
+//             .populate("organization", "name")
+//             .populate("venues", "name");
+
+//         res.status(201).json({
+//             message: "User created and setup link sent",
+//             user: populatedUser
+//         });
+
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ message: "Error creating user" });
+//     }
+// };
+
+
+
+
+
+
+// set password
+
+
 const createUser = async (req, res) => {
     try {
-        const { name, email, role, organizationId, venues } = req.body;
-
-        if (!name || !email || !role)
-            return res.status(400).json({ message: "All fields are required" });
-
+        const { name, email, dataCenters } = req.body;
         const creator = req.user; // logged-in user
 
-        // RULE 1: Only admins OR users that are createdBy: "admin" can create users
-        if (creator.role === "user" && creator.createdBy === "user") {
-            return res.status(403).json({ message: "Access Denied: You cannot create users" });
+        // ---------------- VALIDATE REQUIRED FIELDS ----------------
+        if (!name || !email) {
+            return res.status(400).json({ message: "Name and email are required" });
         }
 
-        let finalOrganizationId;
+        // ---------------- ROLE HIERARCHY VALIDATION ----------------
+        let newUserRole;
 
-        // CASE 1: creator already belongs to an org
-        if (creator.organization) {
-            finalOrganizationId = creator.organization;
-        }
-        // CASE 2: admin must provide organizationId
-        else {
-            if (!organizationId) {
-                return res.status(400).json({ message: "Organization ID is required" });
-            }
-
-            finalOrganizationId = organizationId;
+        if (creator.role === "admin") {
+            newUserRole = "manager"; // admin can only create manager
+        } else if (creator.role === "manager") {
+            newUserRole = "user"; // manager can only create user
+        } else {
+            return res.status(403).json({ message: "Access Denied: Users cannot create other users" });
         }
 
-        // Confirm organization exists
-        const organization = await organizationModel.findById(finalOrganizationId);
-        if (!organization)
-            return res.status(404).json({ message: "Organization not found" });
+        // ---------------- DATA CENTERS VALIDATION (FOR USERS ONLY) ----------------
+        let assignedDataCenters = [];
 
-        // Check duplicate email
-        const existingEmail = await userModel.findOne({ email });
-        if (existingEmail)
-            return res.status(400).json({ message: "User with this email already exists" });
-
-        /* ---------------- VENUE VALIDATION (ONLY FOR USER CREATED USERS) ---------------- */
-        let assignedVenues = [];
-
-        if (creator.role === "user") {
-            if (!venues || venues.length === 0) {
-                return res.status(400).json({
-                    message: "You must assign at least one venue"
-                });
+        if (newUserRole === "user") {
+            if (!dataCenters || !Array.isArray(dataCenters) || dataCenters.length === 0) {
+                return res.status(400).json({ message: "At least one data center must be assigned" });
             }
 
-            // Validate venues belong to same organization
-            const validVenues = await venueModel.find({
-                _id: { $in: venues },
-                organization: creator.organization
-            });
-
-            if (validVenues.length !== venues.length) {
-                return res.status(400).json({
-                    message: "One or more venues are invalid or not in your organization"
-                });
+            // Validate data center IDs
+            const validDataCenters = await DataCenterModel.find({ _id: { $in: dataCenters } });
+            if (validDataCenters.length !== dataCenters.length) {
+                return res.status(400).json({ message: "One or more data centers are invalid" });
             }
 
-            // assignedVenues = venues;
-            assignedVenues = validVenues.map(v => ({
-                venueId: v._id,
-                venueName: v.name
+            assignedDataCenters = validDataCenters.map((dc) => ({
+                dataCenterId: dc._id,
+                name: dc.name,
             }));
         }
 
-        /* ---------------- SETUP PASSWORD TOKEN ---------------- */
+        // ---------------- CHECK DUPLICATE EMAIL ----------------
+        const existingEmail = await userModel.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ message: "User with this email already exists" });
+        }
+
+        // ---------------- SETUP PASSWORD TOKEN ----------------
         const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-        /* ---------------- CREATE USER ---------------- */
+        // ---------------- CREATE USER ----------------
         const newUser = await userModel.create({
             name,
             email,
-            role,
-            organization: finalOrganizationId,
-            venues: assignedVenues,
+            role: newUserRole,
             createdBy: creator.role,
             creatorId: creator._id,
             setupToken: token,
             isActive: false,
             isVerified: false,
+            dataCenters: assignedDataCenters, // empty array for managers
         });
 
-        /* ---------------- SEND SETUP EMAIL ---------------- */
+        // ---------------- SEND SETUP EMAIL ----------------
         const setupLink = `${process.env.FRONTEND_URL}/setup-password/${token}`;
 
         await sendEmail(
             newUser.email,
             "Set up your SmartVolt account",
             `
-            <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
-                <div style="text-align: center;">
-                    <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
-                </div>
-                <h2 style="color: #0055a5;">Welcome to SmartVolt!</h2>
-                <p>Hello <b>${newUser.name || newUser.email}</b>,</p>
-                <p>Your account has been created. Please click below to set your password:</p>
+      <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
+          <div style="text-align: center;">
+              <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
+          </div>
+          <h2 style="color: #0055a5;">Welcome to SmartVolt!</h2>
+          <p>Hello <b>${newUser.name || newUser.email}</b>,</p>
+          <p>Your account has been created. Please click below to set your password:</p>
 
-                <div style="text-align: center; margin: 20px 0;">
-                    <a href="${setupLink}"
-                       style="background-color: #0055a5; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-size: 16px;">
-                       Set Password
-                    </a>
-                </div>
+          <div style="text-align: center; margin: 20px 0;">
+              <a href="${setupLink}"
+                 style="background-color: #0055a5; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-size: 16px;">
+                 Set Password
+              </a>
+          </div>
 
-                <p style="font-size: 14px; color: #555;">
-                    This link will expire in 24 hours. If you didn't expect this email, ignore it.
-                </p>
-                <hr/>
-                <p style="font-size: 12px; text-align: center; color: #888;">
-                    © ${new Date().getFullYear()} IOTFIY Solutions. All rights reserved.
-                </p>
-            </div>
-            `
+          <p style="font-size: 14px; color: #555;">
+              This link will expire in 24 hours. If you didn't expect this email, ignore it.
+          </p>
+          <hr/>
+          <p style="font-size: 12px; text-align: center; color: #888;">
+              © ${new Date().getFullYear()} IOTFIY Solutions. All rights reserved.
+          </p>
+      </div>
+      `
         );
 
-        /* ---------------- RESPONSE WITH POPULATION ---------------- */
-        const populatedUser = await userModel
-            .findById(newUser._id)
-            .populate("organization", "name")
-            .populate("venues", "name");
-
-        res.status(201).json({
+        // ---------------- RESPONSE ----------------
+        return res.status(201).json({
             message: "User created and setup link sent",
-            user: populatedUser
+            user: {
+                id: newUser._id,
+                name: newUser.name,
+                email: newUser.email,
+                role: newUser.role,
+                dataCenters: newUser.dataCenters,
+                isActive: newUser.isActive,
+                isVerified: newUser.isVerified,
+            },
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Error creating user" });
+        console.error("Create User Error:", err);
+        return res.status(500).json({ message: "Error creating user" });
     }
 };
 
-// set password
+
+
 const setPassword = async (req, res) => {
     try {
         const { token } = req.params;
@@ -188,15 +312,20 @@ const setPassword = async (req, res) => {
         if (!password)
             return res.status(400).json({ message: "Password is required" });
 
-        const passwordRegex =
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        // const passwordRegex =
+        //     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-        if (!passwordRegex.test(password)) {
-            return res.status(400).json({
-                message:
-                    "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.",
-            });
-        };
+        // if (!passwordRegex.test(password)) {
+        //     return res.status(400).json({
+        //         message:
+        //             "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.",
+        //     });
+        // };
+
+        const { valid, message } = validatePassword(password);
+        if (!valid) {
+            return res.status(400).json({ message });
+        }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await userModel.findOne({ email: decoded.email, setupToken: token });
@@ -261,10 +390,10 @@ const setPassword = async (req, res) => {
         );
 
 
-        res.json({ message: "Password set successfully, OTP sent to email" });
+        return res.json({ message: "Password set successfully, OTP sent to email" });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: "Error setting password" });
+        return res.status(500).json({ message: "Error setting password" });
     }
 };
 
@@ -317,22 +446,23 @@ const loginUser = async (req, res) => {
         const { email, password } = req.body;
 
         // const user = await userModel.findOne({ email });
-        let userQuery = userModel.findOne({ email });
+        // let userQuery = userModel.findOne({ email });
 
         // Populate only if organization field exists
-        userQuery = userQuery.populate({
-            path: "organization",
-            select: "name",
-        });
+        // userQuery = userQuery.populate({
+        //     path: "organization",
+        //     select: "name",
+        // });
 
-        const user = await userQuery;
+        // const user = await userQuery;
+        const user = await userModel.findOne({ email });
 
         if (!user)
             return res.status(404).json({ message: "User not found" });
 
         if (!user.isActive)
             return res.status(403).json({
-                message: user.suspensionReason || "Account suspended by admin",
+                message: user.suspensionReason || "Account suspended by Admin",
             });
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -354,14 +484,14 @@ const loginUser = async (req, res) => {
 
         const { password: _, ...userData } = user.toObject();
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Login successful",
             user: userData,
             token,
         });
     } catch (err) {
         console.error("Login Error:", err);
-        res.status(500).json({ message: "Login error" });
+        return res.status(500).json({ message: "Login error" });
     }
 };
 
@@ -386,7 +516,7 @@ const forgotPassword = async (req, res) => {
 
         // Create reset link
         // const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
-        const resetLink = `https://luckyone-iotfiysolutions.vercel.app/reset-password/${resetToken}`;
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
         // Send email
         await sendEmail(
@@ -418,12 +548,12 @@ const forgotPassword = async (req, res) => {
         user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
         await user.save();
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Password reset link sent to your email",
         });
     } catch (err) {
         console.error("Forgot Password Error:", err);
-        res.status(500).json({ message: "Error sending reset email" });
+        return res.status(500).json({ message: "Error sending reset email" });
     }
 };
 
@@ -437,14 +567,19 @@ const resetPassword = async (req, res) => {
             return res.status(400).json({ message: "Token and new password are required" });
 
         // Validate new password
-        const passwordRegex =
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        // const passwordRegex =
+        //     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-        if (!passwordRegex.test(password)) {
-            return res.status(400).json({
-                message:
-                    "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.",
-            });
+        // if (!passwordRegex.test(password)) {
+        //     return res.status(400).json({
+        //         message:
+        //             "Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.",
+        //     });
+        // }
+
+        const { valid, message } = validatePassword(password);
+        if (!valid) {
+            return res.status(400).json({ message });
         }
 
         // Verify token
@@ -468,13 +603,13 @@ const resetPassword = async (req, res) => {
 
         await user.save();
 
-        res.status(200).json({ message: "Password reset successfully" });
+        return res.status(200).json({ message: "Password reset successfully" });
     } catch (err) {
         console.error("Reset Password Error:", err);
         if (err.name === "TokenExpiredError")
             return res.status(400).json({ message: "Reset link expired" });
 
-        res.status(500).json({ message: "Error resetting password" });
+        return res.status(500).json({ message: "Error resetting password" });
     }
 };
 
@@ -482,10 +617,10 @@ const resetPassword = async (req, res) => {
 const logoutUser = async (req, res) => {
     try {
         res.clearCookie("token", { httpOnly: true, sameSite: "none", path: "/", secure: true });
-        res.status(200).json({ success: true, message: "Logged out successfully" });
+        return res.status(200).json({ success: true, message: "Logged out successfully" });
     } catch (error) {
         console.error("Error in logout:", error);
-        res.status(500).json({ success: false, message: "Logout failed" });
+        return res.status(500).json({ success: false, message: "Logout failed" });
     }
 };
 
@@ -493,13 +628,13 @@ const logoutUser = async (req, res) => {
 const verifyMe = async (req, res) => {
     console.log("verify");
     try {
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             user: req.user,
         });
     } catch (error) {
         console.error("Error While Verifing User", error);
-        res.status(500).json({ success: false, message: "Server error" });
+        return res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
