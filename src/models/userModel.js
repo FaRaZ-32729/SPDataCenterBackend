@@ -15,6 +15,19 @@ const userSchema = new mongoose.Schema({
     resetTokenExpiry: { type: Date, default: null },
     createdBy: { type: String, required: true },
     creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
+    dataCenters: [
+        {
+            dataCenterId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "dataCenters",
+                required: true,
+            },
+            name: {
+                type: String,
+                required: true,
+            },
+        }
+    ],
 
 }, { timestamps: true });
 

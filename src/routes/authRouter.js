@@ -11,7 +11,7 @@ router.post("/register", authenticate, adminOrAdminCreatedUser, createUser);
 router.post("/set-password/:token", setPassword);
 router.post("/reset-password/:token", resetPassword);
 router.post("/verify-otp/:token", verifyOTP);
-router.post("/forgot-password", authenticate, forgotPassword);
+router.post("/forgot-password", forgotPassword);
 router.delete("/logout", authenticate, logoutUser);
 router.get('/verify/me', authenticate, verifyMe);
 

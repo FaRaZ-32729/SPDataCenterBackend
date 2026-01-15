@@ -1,7 +1,7 @@
 const userModel = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../utils/sendEmail");
-const organizationModel = require("../models/DataCenterModel");
+const DataCenterModel = require("../models/DataCenterModel");
 const mongoose = require("mongoose");
 const venueModel = require("../models/venueModal");
 
@@ -31,29 +31,100 @@ const getUsersByCreatorId = async (req, res) => {
         // Find users created by this creator
         const users = await userModel
             .find({ creatorId })
-            .populate("venues", "venueId")
-            .populate("organization", "name")
-            .populate("creatorId", "name email");
+            .populate("dataCenters.dataCenterId", "name")
+            .populate("creatorId", "name email")
+            .lean();
 
-        console.log(users);
-
-        if (users.length === 0) {
-            return res.status(200).json({ message: "No users found for this creator", users: [] });
+        if (!users || users.length === 0) {
+            return res.status(200).json({
+                message: "No users found for this creator",
+                users: [],
+            });
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: "Users fetched successfully",
             users,
         });
 
     } catch (error) {
         console.error("Error fetching users by creator:", error);
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
 
-// update user status for admin only
+// const updateUserStatus = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { isActive, suspensionReason } = req.body;
+
+//         const user = await userModel.findById(id);
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         if (isActive === false && !suspensionReason) {
+//             return res.status(400).json({
+//                 message: "Suspension reason required when deactivating user",
+//             });
+//         }
+
+//         user.isActive = isActive;
+//         user.suspensionReason = isActive ? "" : suspensionReason;
+//         await user.save();
+
+//         try {
+//             const statusText = isActive ? "Activated" : "Deactivated";
+//             const messageBody = isActive
+//                 ? `
+//                     <p>Hello <b>${user.name || user.email}</b>,</p>
+//                     <p>We’re pleased to inform you that your account has been <b>re-activated</b> and is now accessible again.</p>
+//                     <p>If you did not request this or believe it is a mistake, please <a href="mailto:support@iotfiysolution.com">contact support</a>.</p>
+//                 `
+//                 : `
+//                     <p>Hello <b>${user.name || user.email}</b>,</p>
+//                     <p>Your account has been <b>deactivated</b> by the admin.</p>
+//                     <p><b>Reason:</b> ${suspensionReason}</p>
+//                     <p>If you believe this action was taken in error, please <a href="mailto:support@iotfiysolution.com">contact support</a> as soon as possible.</p>
+//                 `;
+
+//             await sendEmail(
+//                 user.email,
+//                 `Account ${statusText} - SmartVolt`,
+//                 `
+//                 <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
+//                     <div style="text-align: center;">
+//                         <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
+//                     </div>
+//                     <h2 style="color: #0055a5;">Account ${statusText}</h2>
+//                     ${messageBody}
+//                     <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;" />
+//                     <p style="font-size: 12px; color: #888; text-align: center;">
+//                         &copy; ${new Date().getFullYear()} IOTFIY Solutions. All rights reserved.<br/>
+//                         <a href="mailto:support@iotfiysolution.com" style="color: #0055a5; text-decoration: none;">Contact Support</a>
+//                     </p>
+//                 </div>
+//                 `
+//             );
+//             console.log(`Email sent to ${user.email} for account status change.`);
+//         } catch (emailError) {
+//             console.error("Error sending email:", emailError);
+//         }
+
+//         res.status(200).json({
+//             message: `User has been ${isActive ? "activated" : "deactivated"}`,
+//             user,
+//         });
+
+//     } catch (err) {
+//         console.error("Error updating user status:", err);
+//         res.status(500).json({ message: "Error updating user status" });
+//     }
+// };
+
+// update user profile
+
 const updateUserStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -70,10 +141,25 @@ const updateUserStatus = async (req, res) => {
             });
         }
 
+        // ---------------- UPDATE USER STATUS ----------------
         user.isActive = isActive;
         user.suspensionReason = isActive ? "" : suspensionReason;
         await user.save();
 
+        // ---------------- CASCADE: MANAGER → USERS ----------------
+        if (user.role === "manager" && isActive === false) {
+            await userModel.updateMany(
+                { creatorId: user._id },
+                {
+                    $set: {
+                        isActive: false,
+                        suspensionReason: "Manager account suspended",
+                    },
+                }
+            );
+        }
+
+        // ---------------- SEND EMAIL (UNCHANGED) ----------------
         try {
             const statusText = isActive ? "Activated" : "Deactivated";
             const messageBody = isActive
@@ -107,27 +193,26 @@ const updateUserStatus = async (req, res) => {
                 </div>
                 `
             );
-            console.log(`Email sent to ${user.email} for account status change.`);
         } catch (emailError) {
             console.error("Error sending email:", emailError);
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: `User has been ${isActive ? "activated" : "deactivated"}`,
             user,
         });
 
     } catch (err) {
         console.error("Error updating user status:", err);
-        res.status(500).json({ message: "Error updating user status" });
+        return res.status(500).json({ message: "Error updating user status" });
     }
 };
 
-// update user profile
+// only update name , email and password
 const updateUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, password, organization } = req.body;
+        const { name, email, password } = req.body;
 
         const user = await userModel.findById(id);
         if (!user) {
@@ -144,11 +229,6 @@ const updateUserProfile = async (req, res) => {
                 return res.status(400).json({ message: "Email already in use" });
             }
             user.email = email;
-        }
-
-        // Update organization if provided
-        if (organization) {
-            user.organization = organization;
         }
 
         // Update password if provided
@@ -189,6 +269,7 @@ const deleteUser = async (req, res) => {
     }
 };
 
+
 // add new venue in user's venue array
 const addVenueToUser = async (req, res) => {
     try {
@@ -200,7 +281,7 @@ const addVenueToUser = async (req, res) => {
             return res.status(400).json({ message: "Invalid userId" });
         }
         if (!mongoose.Types.ObjectId.isValid(venueId)) {
-            return res.status(400).json({ message: "Invalid blockId" });
+            return res.status(400).json({ message: "Invalid venueId" });
         }
 
         // Check if user exists
@@ -212,7 +293,7 @@ const addVenueToUser = async (req, res) => {
         //  Check if venue exists
         const venue = await venueModel.findById(venueId);
         if (!venue) {
-            return res.status(404).json({ message: "Block not found" });
+            return res.status(404).json({ message: "venue not found" });
         }
 
         // Add venue to user's venues array in the desired format
@@ -226,7 +307,7 @@ const addVenueToUser = async (req, res) => {
         const populatedUser = await userModel.findById(userId).populate("venues.venueId", "venueName");
 
         res.status(200).json({
-            message: "Block added to user successfully",
+            message: "venue added to user successfully",
             user: populatedUser,
         });
     } catch (error) {
