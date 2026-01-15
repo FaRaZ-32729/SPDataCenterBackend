@@ -5,6 +5,7 @@ const sendEmail = require("../utils/sendEmail");
 const organizationModel = require("../models/DataCenterModel");
 const venueModel = require("../models/venueModal");
 const dotenv = require("dotenv");
+const { validatePassword } = require("../utils/passwordValidator");
 
 dotenv.config();
 
@@ -33,7 +34,6 @@ const registerAdmin = async (req, res) => {
             isActive: true,
             isVerified: true,
             createdBy: "admin",
-            organization: null
         });
 
         return res.status(201).json({ message: "Admin Created Successfully", Admin: newAdmin })
