@@ -11,10 +11,10 @@ router.put("/update-status/:id", authenticate, adminOnly, updateUserStatus);
 router.get("/all", authenticate, getAllUsers);
 router.get("/status/:userId", getUserStatus);
 router.get("/:creatorId", getUsersByCreatorId);
-router.get("/by-datacenter/:dcId", authenticate, adminOrAdminCreatedUser, getUsersByDataCenterId)
+router.get("/by-datacenter/:dcId", authenticate,  getUsersByDataCenterId)
 router.put("/update/:id", authenticate, adminOnly, updateUserProfile);
 router.delete("/delete/:id", authenticate, adminOrAdminCreatedUser, deleteUser);
-router.delete("/:userId/delete/:dcId", authenticate, adminOrAdminCreatedUser, removeDataCenterFromUser);
+router.delete("/:userId/delete/:dcId", authenticate,  removeDataCenterFromUser);
 
 
 module.exports = router;

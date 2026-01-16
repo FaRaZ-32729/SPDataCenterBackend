@@ -53,7 +53,7 @@ const getUsersByCreatorId = async (req, res) => {
     }
 };
 
-
+// only admin can activate or deactivate the manager's status
 const updateUserStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -199,52 +199,6 @@ const deleteUser = async (req, res) => {
 };
 
 
-// add new venue in user's venue array
-// const addVenueToUser = async (req, res) => {
-//     try {
-//         const { userId } = req.params;
-//         const { venueId } = req.body;
-
-//         // Validate userId and venueId
-//         if (!mongoose.Types.ObjectId.isValid(userId)) {
-//             return res.status(400).json({ message: "Invalid userId" });
-//         }
-//         if (!mongoose.Types.ObjectId.isValid(venueId)) {
-//             return res.status(400).json({ message: "Invalid venueId" });
-//         }
-
-//         // Check if user exists
-//         const user = await userModel.findById(userId);
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         //  Check if venue exists
-//         const venue = await venueModel.findById(venueId);
-//         if (!venue) {
-//             return res.status(404).json({ message: "venue not found" });
-//         }
-
-//         // Add venue to user's venues array in the desired format
-//         user.venues.push({
-//             venueId: venue._id,
-//             venueName: venue.name
-//         });
-
-//         await user.save();
-
-//         const populatedUser = await userModel.findById(userId).populate("venues.venueId", "venueName");
-
-//         res.status(200).json({
-//             message: "venue added to user successfully",
-//             user: populatedUser,
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: error.message });
-//     }
-// };
-
 // add new data center to user's dataCenters array
 const addDataCenterToUser = async (req, res) => {
     try {
@@ -255,9 +209,6 @@ const addDataCenterToUser = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
             return res.status(400).json({ message: "Invalid userId" });
         }
-
-        console.log("Received dataCenterId:", dataCenterId);
-        console.log("Is valid ObjectId:", mongoose.Types.ObjectId.isValid(dataCenterId));
 
 
         if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
@@ -312,63 +263,10 @@ const addDataCenterToUser = async (req, res) => {
 };
 
 
-// remove a venue form user's venue array
-// const removeVenueFromUser = async (req, res) => {
-//     try {
-//         const { userId, venueId } = req.params;
-
-//         // Validate userId and venueId
-//         if (!mongoose.Types.ObjectId.isValid(userId)) {
-//             return res.status(400).json({ message: "Invalid userId" });
-//         }
-//         if (!mongoose.Types.ObjectId.isValid(venueId)) {
-//             return res.status(400).json({ message: "Invalid blockId" });
-//         }
-
-//         // Check if user exists
-//         const user = await userModel.findById(userId);
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         // Check if venue exists in user's venues array
-//         const venueExists = user.venues.some(v => v.venueId.toString() === venueId);
-//         if (!venueExists) {
-//             return res.status(404).json({ message: "Block not assigned to this user" });
-//         }
-
-//         // Check if venue exists in the database
-//         const venue = await venueModel.findById(venueId);
-//         if (!venue) {
-//             return res.status(404).json({ message: "Block not found" });
-//         }
-
-//         // Remove venue
-//         const updatedUser = await userModel.findByIdAndUpdate(
-//             userId,
-//             { $pull: { venues: { venueId: venueId } } },
-//             { new: true }
-//         ).populate("venues.venueId", "venueName");
-
-//         res.status(200).json({
-//             message: "Block removed from user successfully",
-//             user: updatedUser,
-//         });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: error.message });
-//     }
-// }
-
 // remove a data center from user's dataCenters array
 const removeDataCenterFromUser = async (req, res) => {
     try {
         const { userId, dcId } = req.params;
-
-        console.log("Params:", req.params);
-        console.log("Querying userId:", userId);
-        const userr = await userModel.findById(userId);
-        console.log("Found user:", userr);
 
 
         // Validate IDs
@@ -418,7 +316,6 @@ const removeDataCenterFromUser = async (req, res) => {
 };
 
 
-
 // get users by data center id
 const getUsersByDataCenterId = async (req, res) => {
     try {
@@ -464,7 +361,7 @@ const getUsersByDataCenterId = async (req, res) => {
     }
 };
 
-
+// get users status
 const getUserStatus = async (req, res) => {
     try {
         const { userId } = req.params;
