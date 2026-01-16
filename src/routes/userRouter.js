@@ -1,20 +1,20 @@
 const express = require("express");
-const { getAllUsers, updateUserStatus, updateUserProfile, deleteUser, getUsersByOrganizationId, addVenueToUser, removeVenueFromUser, getUserStatus, getUsersByCreatorId } = require("../controllers/userController");
+const { getAllUsers, updateUserStatus, updateUserProfile, deleteUser, getUsersByDataCenterId, removeDataCenterFromUser, addDataCenterToUser, getUserStatus, getUsersByCreatorId } = require("../controllers/userController");
 const adminOnly = require("../middlewere/adminOnly");
 const authenticate = require("../middlewere/authMiddleware");
 const adminOrAdminCreatedUser = require("../middlewere/adminOrAdminCreatedUser");
 
 const router = express.Router();
 
-router.post("/:userId/add-venue", authenticate, adminOrAdminCreatedUser, addVenueToUser);
+router.post("/:userId/add-datacenter", authenticate, adminOrAdminCreatedUser, addDataCenterToUser);
 router.put("/update-status/:id", authenticate, adminOnly, updateUserStatus);
-router.get("/all", authenticate, adminOnly, getAllUsers);
+router.get("/all", authenticate, getAllUsers);
 router.get("/status/:userId", getUserStatus);
 router.get("/:creatorId", getUsersByCreatorId);
-router.get("/:orgId", authenticate, adminOrAdminCreatedUser, getUsersByOrganizationId)
+router.get("/by-datacenter/:dcId", authenticate, adminOrAdminCreatedUser, getUsersByDataCenterId)
 router.put("/update/:id", authenticate, adminOnly, updateUserProfile);
 router.delete("/delete/:id", authenticate, adminOrAdminCreatedUser, deleteUser);
-router.delete("/:userId/delete/:venueId", adminOrAdminCreatedUser, removeVenueFromUser);
+router.delete("/:userId/delete/:dcId", authenticate, adminOrAdminCreatedUser, removeDataCenterFromUser);
 
 
 module.exports = router;

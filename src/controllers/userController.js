@@ -54,77 +54,6 @@ const getUsersByCreatorId = async (req, res) => {
 };
 
 
-// const updateUserStatus = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const { isActive, suspensionReason } = req.body;
-
-//         const user = await userModel.findById(id);
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         if (isActive === false && !suspensionReason) {
-//             return res.status(400).json({
-//                 message: "Suspension reason required when deactivating user",
-//             });
-//         }
-
-//         user.isActive = isActive;
-//         user.suspensionReason = isActive ? "" : suspensionReason;
-//         await user.save();
-
-//         try {
-//             const statusText = isActive ? "Activated" : "Deactivated";
-//             const messageBody = isActive
-//                 ? `
-//                     <p>Hello <b>${user.name || user.email}</b>,</p>
-//                     <p>We’re pleased to inform you that your account has been <b>re-activated</b> and is now accessible again.</p>
-//                     <p>If you did not request this or believe it is a mistake, please <a href="mailto:support@iotfiysolution.com">contact support</a>.</p>
-//                 `
-//                 : `
-//                     <p>Hello <b>${user.name || user.email}</b>,</p>
-//                     <p>Your account has been <b>deactivated</b> by the admin.</p>
-//                     <p><b>Reason:</b> ${suspensionReason}</p>
-//                     <p>If you believe this action was taken in error, please <a href="mailto:support@iotfiysolution.com">contact support</a> as soon as possible.</p>
-//                 `;
-
-//             await sendEmail(
-//                 user.email,
-//                 `Account ${statusText} - SmartVolt`,
-//                 `
-//                 <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
-//                     <div style="text-align: center;">
-//                         <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
-//                     </div>
-//                     <h2 style="color: #0055a5;">Account ${statusText}</h2>
-//                     ${messageBody}
-//                     <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;" />
-//                     <p style="font-size: 12px; color: #888; text-align: center;">
-//                         &copy; ${new Date().getFullYear()} IOTFIY Solutions. All rights reserved.<br/>
-//                         <a href="mailto:support@iotfiysolution.com" style="color: #0055a5; text-decoration: none;">Contact Support</a>
-//                     </p>
-//                 </div>
-//                 `
-//             );
-//             console.log(`Email sent to ${user.email} for account status change.`);
-//         } catch (emailError) {
-//             console.error("Error sending email:", emailError);
-//         }
-
-//         res.status(200).json({
-//             message: `User has been ${isActive ? "activated" : "deactivated"}`,
-//             user,
-//         });
-
-//     } catch (err) {
-//         console.error("Error updating user status:", err);
-//         res.status(500).json({ message: "Error updating user status" });
-//     }
-// };
-
-// update user profile
-
 const updateUserStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -153,7 +82,7 @@ const updateUserStatus = async (req, res) => {
                 {
                     $set: {
                         isActive: false,
-                        suspensionReason: "Manager account suspended",
+                        suspensionReason: "Your account has been temporarily deactivated because your manager’s account has been suspended by the administrator. Please contact your manager.",
                     },
                 }
             );
@@ -177,11 +106,11 @@ const updateUserStatus = async (req, res) => {
 
             await sendEmail(
                 user.email,
-                `Account ${statusText} - SmartVolt`,
+                `Account ${statusText} - Data Center`,
                 `
                 <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
                     <div style="text-align: center;">
-                        <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
+                        <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="dataCenter Logo" style="width: 120px; margin-bottom: 20px;" />
                     </div>
                     <h2 style="color: #0055a5;">Account ${statusText}</h2>
                     ${messageBody}
@@ -271,17 +200,68 @@ const deleteUser = async (req, res) => {
 
 
 // add new venue in user's venue array
-const addVenueToUser = async (req, res) => {
+// const addVenueToUser = async (req, res) => {
+//     try {
+//         const { userId } = req.params;
+//         const { venueId } = req.body;
+
+//         // Validate userId and venueId
+//         if (!mongoose.Types.ObjectId.isValid(userId)) {
+//             return res.status(400).json({ message: "Invalid userId" });
+//         }
+//         if (!mongoose.Types.ObjectId.isValid(venueId)) {
+//             return res.status(400).json({ message: "Invalid venueId" });
+//         }
+
+//         // Check if user exists
+//         const user = await userModel.findById(userId);
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         //  Check if venue exists
+//         const venue = await venueModel.findById(venueId);
+//         if (!venue) {
+//             return res.status(404).json({ message: "venue not found" });
+//         }
+
+//         // Add venue to user's venues array in the desired format
+//         user.venues.push({
+//             venueId: venue._id,
+//             venueName: venue.name
+//         });
+
+//         await user.save();
+
+//         const populatedUser = await userModel.findById(userId).populate("venues.venueId", "venueName");
+
+//         res.status(200).json({
+//             message: "venue added to user successfully",
+//             user: populatedUser,
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: error.message });
+//     }
+// };
+
+// add new data center to user's dataCenters array
+const addDataCenterToUser = async (req, res) => {
     try {
         const { userId } = req.params;
-        const { venueId } = req.body;
+        const { dataCenterId } = req.body;
 
-        // Validate userId and venueId
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
+        // Validate IDs
+        if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
             return res.status(400).json({ message: "Invalid userId" });
         }
-        if (!mongoose.Types.ObjectId.isValid(venueId)) {
-            return res.status(400).json({ message: "Invalid venueId" });
+
+        console.log("Received dataCenterId:", dataCenterId);
+        console.log("Is valid ObjectId:", mongoose.Types.ObjectId.isValid(dataCenterId));
+
+
+        if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
+            return res.status(400).json({ message: "Invalid dataCenterId" });
         }
 
         // Check if user exists
@@ -290,43 +270,110 @@ const addVenueToUser = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        //  Check if venue exists
-        const venue = await venueModel.findById(venueId);
-        if (!venue) {
-            return res.status(404).json({ message: "venue not found" });
+        // Check if data center exists
+        const dataCenter = await DataCenterModel.findById(dataCenterId);
+        if (!dataCenter) {
+            return res.status(404).json({ message: "Data center not found" });
         }
 
-        // Add venue to user's venues array in the desired format
-        user.venues.push({
-            venueId: venue._id,
-            venueName: venue.name
+        // Prevent duplicate assignment
+        // const alreadyAssigned = user.dataCenters.some(
+        //     (dc) => dc.dataCenterId.toString() === dataCenterId
+        // );
+
+        // if (alreadyAssigned) {
+        //     return res.status(409).json({
+        //         message: "Data center already assigned to this user",
+        //     });
+        // }
+
+        // Add data center
+        user.dataCenters.push({
+            dataCenterId: dataCenter._id,
+            name: dataCenter.name,
         });
 
         await user.save();
 
-        const populatedUser = await userModel.findById(userId).populate("venues.venueId", "venueName");
+        const populatedUser = await userModel
+            .findById(userId)
+            .populate("dataCenters.dataCenterId", "name")
+            .lean();
 
-        res.status(200).json({
-            message: "venue added to user successfully",
+        return res.status(200).json({
+            message: "Data center added to user successfully",
             user: populatedUser,
         });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
+        console.error("Add Data Center Error:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 };
 
-// remove a venue form user's venue array
-const removeVenueFromUser = async (req, res) => {
-    try {
-        const { userId, venueId } = req.params;
 
-        // Validate userId and venueId
+// remove a venue form user's venue array
+// const removeVenueFromUser = async (req, res) => {
+//     try {
+//         const { userId, venueId } = req.params;
+
+//         // Validate userId and venueId
+//         if (!mongoose.Types.ObjectId.isValid(userId)) {
+//             return res.status(400).json({ message: "Invalid userId" });
+//         }
+//         if (!mongoose.Types.ObjectId.isValid(venueId)) {
+//             return res.status(400).json({ message: "Invalid blockId" });
+//         }
+
+//         // Check if user exists
+//         const user = await userModel.findById(userId);
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         // Check if venue exists in user's venues array
+//         const venueExists = user.venues.some(v => v.venueId.toString() === venueId);
+//         if (!venueExists) {
+//             return res.status(404).json({ message: "Block not assigned to this user" });
+//         }
+
+//         // Check if venue exists in the database
+//         const venue = await venueModel.findById(venueId);
+//         if (!venue) {
+//             return res.status(404).json({ message: "Block not found" });
+//         }
+
+//         // Remove venue
+//         const updatedUser = await userModel.findByIdAndUpdate(
+//             userId,
+//             { $pull: { venues: { venueId: venueId } } },
+//             { new: true }
+//         ).populate("venues.venueId", "venueName");
+
+//         res.status(200).json({
+//             message: "Block removed from user successfully",
+//             user: updatedUser,
+//         });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: error.message });
+//     }
+// }
+
+// remove a data center from user's dataCenters array
+const removeDataCenterFromUser = async (req, res) => {
+    try {
+        const { userId, dcId } = req.params;
+
+        console.log(userId)
+
+        // Validate IDs
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ message: "Invalid userId" });
         }
-        if (!mongoose.Types.ObjectId.isValid(venueId)) {
-            return res.status(400).json({ message: "Invalid blockId" });
+
+        if (!mongoose.Types.ObjectId.isValid(dcId)) {
+            return res.status(400).json({ message: "Invalid dataCenterId" });
         }
 
         // Check if user exists
@@ -335,72 +382,84 @@ const removeVenueFromUser = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Check if venue exists in user's venues array
-        const venueExists = user.venues.some(v => v.venueId.toString() === venueId);
-        if (!venueExists) {
-            return res.status(404).json({ message: "Block not assigned to this user" });
+        // Check if data center is assigned
+        const dataCenterExists = user.dataCenters.some(
+            (dc) => dc.dataCenterId.toString() === dcId
+        );
+
+        if (!dataCenterExists) {
+            return res.status(404).json({
+                message: "Data center not assigned to this user",
+            });
         }
 
-        // Check if venue exists in the database
-        const venue = await venueModel.findById(venueId);
-        if (!venue) {
-            return res.status(404).json({ message: "Block not found" });
-        }
+        // Remove data center
+        const updatedUser = await userModel
+            .findByIdAndUpdate(
+                userId,
+                { $pull: { dataCenters: { dcId } } },
+                { new: true }
+            )
+            .populate("dataCenters.dataCenterId", "name")
+            .lean();
 
-        // Remove venue
-        const updatedUser = await userModel.findByIdAndUpdate(
-            userId,
-            { $pull: { venues: { venueId: venueId } } },
-            { new: true }
-        ).populate("venues.venueId", "venueName");
-
-        res.status(200).json({
-            message: "Block removed from user successfully",
+        return res.status(200).json({
+            message: "Data center removed from user successfully",
             user: updatedUser,
         });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: error.message });
+        console.error("Remove Data Center Error:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
-}
+};
 
-// get users by organization id
-const getUsersByOrganizationId = async (req, res) => {
+
+// get users by data center id
+const getUsersByDataCenterId = async (req, res) => {
     try {
-        const { orgId } = req.params;
+        const { dcId } = req.params;
 
-        if (!orgId) {
-            return res.status(400).json({ message: "Sector ID is required" });
+        if (!dcId) {
+            return res.status(400).json({ message: "Data Center ID is required" });
         }
 
-        // Check if organization exists
-        const org = await organizationModel.findById(orgId);
-        if (!org) {
-            return res.status(404).json({ message: "Sector not found" });
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(dcId)) {
+            return res.status(400).json({ message: "Invalid Data Center ID" });
         }
 
-        // Find all users belonging to this organization
+        // Find users assigned to this data center
         const users = await userModel
-            .find({ organization: orgId })
-            .select("-password -otp -otpExpiry -resetToken -resetTokenExpiry -setupToken -suspensionReason -isActive -isVerified -role") // exclude sensitive fields
-            .populate("venues", "venueName"); // optional, if you want venue names
+            .find({
+                "dataCenters.dataCenterId": dcId,
+            })
+            .select(
+                "-password -otp -otpExpiry -resetToken -resetTokenExpiry -setupToken -suspensionReason"
+            )
+            .populate("dataCenters.dataCenterId", "name")
+            .lean();
 
         if (!users || users.length === 0) {
-            return res.status(404).json({ message: "No users found for this sector" });
+            return res.status(404).json({
+                message: "No users found for this data center",
+                users: [],
+            });
         }
 
-        res.status(200).json({
-            message: `Users for sector '${org.name}' fetched successfully`,
+        return res.status(200).json({
+            message: "Users fetched successfully for this data center",
             users,
         });
 
     } catch (err) {
-        console.error("Error fetching users by organization ID:", err);
-        res.status(500).json({
-            message: "Internal Server Error while fetching users by sector ID",
+        console.error("Error fetching users by data center ID:", err);
+        return res.status(500).json({
+            message: "Internal Server Error while fetching users by data center ID",
         });
     }
 };
+
 
 const getUserStatus = async (req, res) => {
     try {
@@ -423,4 +482,4 @@ const getUserStatus = async (req, res) => {
 };
 
 
-module.exports = { getAllUsers, updateUserStatus, updateUserProfile, deleteUser, getUsersByOrganizationId, addVenueToUser, removeVenueFromUser, getUserStatus, getUsersByCreatorId }
+module.exports = { getAllUsers, updateUserStatus, updateUserProfile, deleteUser, getUsersByDataCenterId, addDataCenterToUser, removeDataCenterFromUser, getUserStatus, getUsersByCreatorId }
