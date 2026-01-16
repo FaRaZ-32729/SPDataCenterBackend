@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema({
     resetToken: { type: String, default: null },
     resetTokenExpiry: { type: Date, default: null },
     createdBy: { type: String, required: true },
-    creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
+    creatorId: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: false },
     dataCenters: [
         {
             dataCenterId: {
@@ -31,4 +31,4 @@ const userSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("users", userSchema);

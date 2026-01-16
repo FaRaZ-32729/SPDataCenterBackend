@@ -1,5 +1,6 @@
 const DataCenterModel = require("../models/DataCenterModel");
 const userModel = require("../models/userModel");
+const mongoose = require("mongoose");
 
 // create DataCenter
 const createDataCenter = async (req, res) => {
@@ -74,7 +75,41 @@ const getDataCenterById = async (req, res) => {
 };
 
 // get DataCenter by user id
-const getDataCenterByUserId = async (req, res) => {
+// const getDataCenterByUserId = async (req, res) => {
+//     try {
+//         const { userId } = req.params;
+
+//         if (!userId) {
+//             return res.status(400).json({ message: "User ID is required" });
+//         }
+
+//         // Check if user exists
+//         const user = await userModel.findById(userId).populate("organization");
+
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         // Check if user has an organization
+//         if (!user.organization) {
+//             return res.status(404).json({ message: "This user does not belong to any DataCenter" });
+//         }
+
+//         // Return populated organization
+//         res.status(200).json({
+//             message: "DataCenter fetched successfully",
+//             organization: user.organization,
+//         });
+
+//     } catch (err) {
+//         console.error("Error fetching organization by user ID:", err);
+//         res.status(500).json({
+//             message: "Internal Server Error while fetching DataCenter by user ID",
+//         });
+//     }
+// };
+
+const getDataCentersByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
 
@@ -82,28 +117,36 @@ const getDataCenterByUserId = async (req, res) => {
             return res.status(400).json({ message: "User ID is required" });
         }
 
+        // Validate ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid User ID" });
+        }
+
         // Check if user exists
-        const user = await userModel.findById(userId).populate("organization");
+        const user = await userModel
+            .findById(userId)
+            .populate("dataCenters.dataCenterId", "name")
+            .lean();
 
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Check if user has an organization
-        if (!user.organization) {
-            return res.status(404).json({ message: "This user does not belong to any DataCenter" });
+        // Check if user has data centers
+        if (!user.dataCenters || user.dataCenters.length === 0) {
+            return res.status(404).json({ message: "This user is not assigned to any Data Center" });
         }
 
-        // Return populated organization
-        res.status(200).json({
-            message: "DataCenter fetched successfully",
-            organization: user.organization,
+        // Return populated data centers
+        return res.status(200).json({
+            message: "Data Centers fetched successfully",
+            dataCenters: user.dataCenters,
         });
 
     } catch (err) {
-        console.error("Error fetching organization by user ID:", err);
-        res.status(500).json({
-            message: "Internal Server Error while fetching DataCenter by user ID",
+        console.error("Error fetching data centers by user ID:", err);
+        return res.status(500).json({
+            message: "Internal Server Error while fetching data centers by user ID",
         });
     }
 };
@@ -179,4 +222,4 @@ const deleteDataCenter = async (req, res) => {
 
 
 
-module.exports = { createDataCenter, getDataCenter, updateDataCenter, deleteDataCenter, getDataCenterById, getDataCenterByUserId }
+module.exports = { createDataCenter, getDataCenter, updateDataCenter, deleteDataCenter, getDataCenterById, getDataCentersByUserId }

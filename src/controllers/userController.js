@@ -365,13 +365,16 @@ const removeDataCenterFromUser = async (req, res) => {
     try {
         const { userId, dcId } = req.params;
 
-        console.log(userId)
+        console.log("Params:", req.params);
+        console.log("Querying userId:", userId);
+        const userr = await userModel.findById(userId);
+        console.log("Found user:", userr);
+
 
         // Validate IDs
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ message: "Invalid userId" });
         }
-
         if (!mongoose.Types.ObjectId.isValid(dcId)) {
             return res.status(400).json({ message: "Invalid dataCenterId" });
         }
@@ -397,7 +400,7 @@ const removeDataCenterFromUser = async (req, res) => {
         const updatedUser = await userModel
             .findByIdAndUpdate(
                 userId,
-                { $pull: { dataCenters: { dcId } } },
+                { $pull: { dataCenters: { dataCenterId: dcId } } }, // ✅ FIXED
                 { new: true }
             )
             .populate("dataCenters.dataCenterId", "name")
@@ -413,6 +416,7 @@ const removeDataCenterFromUser = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
+
 
 
 // get users by data center id
