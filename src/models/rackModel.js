@@ -34,22 +34,24 @@ const RackSchema = new mongoose.Schema(
             trim: true, // e.g. "c1"
         },
 
-        conditions: {
-            type: {
-                type: String,
-                enum: ["temp", "humidity"],
-                required: true,
-            },
-            operator: {
-                type: String,
-                enum: ["<", ">"],
-                required: true,
-            },
-            value: {
-                type: Number,
-                required: true,
-            },
-        },
+        conditions: [
+            {
+                type: {
+                    type: String,
+                    enum: ["temp", "humidity"],
+                    required: true,
+                },
+                operator: {
+                    type: String,
+                    enum: ["<", ">"],
+                    required: true,
+                },
+                value: {
+                    type: Number,
+                    required: true,
+                },
+            }
+        ],
 
         tempAlert: {
             type: Boolean,

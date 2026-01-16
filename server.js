@@ -14,6 +14,7 @@ const venueRouter = require("./src/routes/venueRouter");
 const deviceRouter = require("./src/routes/deviceRouter");
 const alertsRouter = require("./src/routes/alertsRouter");
 const hubRouter = require("./src/routes/hubRouter");
+const rackRouter = require("./src/routes/rackRouter");
 const authenticate = require("./src/middlewere/authMiddleware");
 
 
@@ -57,6 +58,7 @@ app.use("/data-center", dataCenterRouter);
 app.use("/venue", authenticate, venueRouter);
 app.use("/device", authenticate, deviceRouter);
 app.use("/hub", hubRouter);
+app.use("/rack", rackRouter);
 app.use("/alert", authenticate, alertsRouter);
 
 app.get("/", (req, res) => {

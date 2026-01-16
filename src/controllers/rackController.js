@@ -17,24 +17,24 @@ const createRack = async (req, res) => {
             conditions,
         } = req.body;
 
-        // 1️⃣ Basic validation
+        //  Basic validation
         if (!dataCenterId || !hubId || !sensorIds?.length || !row || !col || !conditions) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // 2️⃣ Check DataCenter exists
+        //  Check DataCenter exists
         const dataCenter = await DataCenterModel.findById(dataCenterId);
         if (!dataCenter) {
             return res.status(404).json({ message: "Data center not found" });
         }
 
-        // 3️⃣ Check Hub exists
+        //  Check Hub exists
         const hub = await HubModel.findById(hubId);
         if (!hub) {
             return res.status(404).json({ message: "Hub not found" });
         }
 
-        // 4️⃣ Validate Sensors
+        //  Validate Sensors
         const sensorsCount = await SensorModel.countDocuments({
             _id: { $in: sensorIds },
             hubId,
@@ -46,13 +46,24 @@ const createRack = async (req, res) => {
             });
         }
 
-        // 5️⃣ Validate conditions object
-        const { type, operator, value } = conditions;
-        if (!["temp", "humidity"].includes(type) || !["<", ">"].includes(operator)) {
+        //  Validate conditions array
+        if (!Array.isArray(conditions) || conditions.length === 0) {
             return res.status(400).json({ message: "Invalid condition format" });
         }
 
-        // 6️⃣ Create Rack
+        for (const cond of conditions) {
+            if (
+                !cond.type ||
+                !["temp", "humidity"].includes(cond.type) ||
+                !cond.operator ||
+                !["<", ">"].includes(cond.operator) ||
+                typeof cond.value !== "number"
+            ) {
+                return res.status(400).json({ message: "Invalid condition format" });
+            }
+        }
+
+        //  Create Rack
         const rack = await RackModel.create({
             dataCenterId,
             hubId,
@@ -122,9 +133,20 @@ const updateRack = async (req, res) => {
 
         // Validate conditions if updating
         if (updateData.conditions) {
-            const { type, operator } = updateData.conditions;
-            if (!["temp", "humidity"].includes(type) || !["<", ">"].includes(operator)) {
+            if (!Array.isArray(updateData.conditions) || updateData.conditions.length === 0) {
                 return res.status(400).json({ message: "Invalid condition format" });
+            }
+
+            for (const cond of updateData.conditions) {
+                if (
+                    !cond.type ||
+                    !["temp", "humidity"].includes(cond.type) ||
+                    !cond.operator ||
+                    !["<", ">"].includes(cond.operator) ||
+                    typeof cond.value !== "number"
+                ) {
+                    return res.status(400).json({ message: "Invalid condition format" });
+                }
             }
         }
 
