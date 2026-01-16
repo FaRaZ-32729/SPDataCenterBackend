@@ -138,20 +138,61 @@ const updateUserStatus = async (req, res) => {
 };
 
 // only update name , email and password
+// const updateUserProfile = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { name, email, password } = req.body;
+
+//         const user = await userModel.findById(id);
+//         if (!user) {
+//             return res.status(404).json({ message: "User not found" });
+//         }
+
+//         // Update name if provided
+//         if (name) user.name = name;
+
+//         // Update email if provided and not already in use
+//         if (email && email !== user.email) {
+//             const emailExists = await userModel.findOne({ email });
+//             if (emailExists) {
+//                 return res.status(400).json({ message: "Email already in use" });
+//             }
+//             user.email = email;
+//         }
+
+//         // Update password if provided
+//         if (password) {
+//             // const salt = await bcrypt.genSalt(10);
+//             user.password = await bcrypt.hash(password, 10);
+//         }
+
+//         // Save the user
+//         await user.save();
+
+//         res.status(200).json({
+//             message: "User updated successfully",
+//             user,
+//         });
+//     } catch (err) {
+//         console.error("Error updating user:", err);
+//         res.status(500).json({ message: "Error updating user" });
+//     }
+// };
+
 const updateUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, password } = req.body;
+        const { name, email, password, dataCenters } = req.body;
 
         const user = await userModel.findById(id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Update name if provided
+        //  Update name if provided
         if (name) user.name = name;
 
-        // Update email if provided and not already in use
+        //  Update email if provided and not already in use
         if (email && email !== user.email) {
             const emailExists = await userModel.findOne({ email });
             if (emailExists) {
@@ -160,13 +201,44 @@ const updateUserProfile = async (req, res) => {
             user.email = email;
         }
 
-        // Update password if provided
+        //  Update password if provided
         if (password) {
-            // const salt = await bcrypt.genSalt(10);
             user.password = await bcrypt.hash(password, 10);
         }
 
-        // Save the user
+        //  Update dataCenters if provided
+        if (dataCenters && Array.isArray(dataCenters)) {
+            const validatedDataCenters = [];
+
+            for (const dc of dataCenters) {
+                // Each dc should contain only dataCenterId
+                if (!dc.dataCenterId) {
+                    return res.status(400).json({
+                        message: "Each dataCenter must have dataCenterId",
+                    });
+                }
+
+                // Check if the DataCenter exists
+                const existingDC = await DataCenterModel.findById(dc.dataCenterId);
+                if (!existingDC) {
+                    return res.status(404).json({
+                        message: `DataCenter with ID ${dc.dataCenterId} not found`,
+                    });
+                }
+
+                // Push with the name fetched from DB
+                validatedDataCenters.push({
+                    dataCenterId: existingDC._id,
+                    name: existingDC.name,
+                });
+            }
+
+            // Replace user's dataCenters with validated array
+            user.dataCenters = validatedDataCenters;
+        }
+
+
+        // Save user
         await user.save();
 
         res.status(200).json({

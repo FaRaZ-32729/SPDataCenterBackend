@@ -43,148 +43,6 @@ const registerAdmin = async (req, res) => {
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// const createUser = async (req, res) => {
-//     try {
-//         const { name, email, role, organizationId, venues } = req.body;
-
-//         if (!name || !email || !role)
-//             return res.status(400).json({ message: "All fields are required" });
-
-//         const creator = req.user; // logged-in user
-
-//         // RULE 1: Only admins OR users that are createdBy: "admin" can create users
-//         if (creator.role === "user" && creator.createdBy === "user") {
-//             return res.status(403).json({ message: "Access Denied: You cannot create users" });
-//         }
-
-//         let finalOrganizationId;
-
-//         // CASE 1: creator already belongs to an org
-//         if (creator.organization) {
-//             finalOrganizationId = creator.organization;
-//         }
-//         // CASE 2: admin must provide organizationId
-//         else {
-//             if (!organizationId) {
-//                 return res.status(400).json({ message: "Organization ID is required" });
-//             }
-
-//             finalOrganizationId = organizationId;
-//         }
-
-//         // Confirm organization exists
-//         const organization = await organizationModel.findById(finalOrganizationId);
-//         if (!organization)
-//             return res.status(404).json({ message: "Organization not found" });
-
-//         // Check duplicate email
-//         const existingEmail = await userModel.findOne({ email });
-//         if (existingEmail)
-//             return res.status(400).json({ message: "User with this email already exists" });
-
-//         /* ---------------- VENUE VALIDATION (ONLY FOR USER CREATED USERS) ---------------- */
-//         let assignedVenues = [];
-
-//         if (creator.role === "user") {
-//             if (!venues || venues.length === 0) {
-//                 return res.status(400).json({
-//                     message: "You must assign at least one venue"
-//                 });
-//             }
-
-//             // Validate venues belong to same organization
-//             const validVenues = await venueModel.find({
-//                 _id: { $in: venues },
-//                 organization: creator.organization
-//             });
-
-//             if (validVenues.length !== venues.length) {
-//                 return res.status(400).json({
-//                     message: "One or more venues are invalid or not in your organization"
-//                 });
-//             }
-
-//             // assignedVenues = venues;
-//             assignedVenues = validVenues.map(v => ({
-//                 venueId: v._id,
-//                 venueName: v.name
-//             }));
-//         }
-
-//         /* ---------------- SETUP PASSWORD TOKEN ---------------- */
-//         const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: "1d" });
-
-//         /* ---------------- CREATE USER ---------------- */
-//         const newUser = await userModel.create({
-//             name,
-//             email,
-//             role,
-//             organization: finalOrganizationId,
-//             venues: assignedVenues,
-//             createdBy: creator.role,
-//             creatorId: creator._id,
-//             setupToken: token,
-//             isActive: false,
-//             isVerified: false,
-//         });
-
-//         /* ---------------- SEND SETUP EMAIL ---------------- */
-//         const setupLink = `${process.env.FRONTEND_URL}/setup-password/${token}`;
-
-//         await sendEmail(
-//             newUser.email,
-//             "Set up your SmartVolt account",
-//             `
-//             <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
-//                 <div style="text-align: center;">
-//                     <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="SmartVolt Logo" style="width: 120px; margin-bottom: 20px;" />
-//                 </div>
-//                 <h2 style="color: #0055a5;">Welcome to SmartVolt!</h2>
-//                 <p>Hello <b>${newUser.name || newUser.email}</b>,</p>
-//                 <p>Your account has been created. Please click below to set your password:</p>
-
-//                 <div style="text-align: center; margin: 20px 0;">
-//                     <a href="${setupLink}"
-//                        style="background-color: #0055a5; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-size: 16px;">
-//                        Set Password
-//                     </a>
-//                 </div>
-
-//                 <p style="font-size: 14px; color: #555;">
-//                     This link will expire in 24 hours. If you didn't expect this email, ignore it.
-//                 </p>
-//                 <hr/>
-//                 <p style="font-size: 12px; text-align: center; color: #888;">
-//                     © ${new Date().getFullYear()} IOTFIY Solutions. All rights reserved.
-//                 </p>
-//             </div>
-//             `
-//         );
-
-//         /* ---------------- RESPONSE WITH POPULATION ---------------- */
-//         const populatedUser = await userModel
-//             .findById(newUser._id)
-//             .populate("organization", "name")
-//             .populate("venues", "name");
-
-//         res.status(201).json({
-//             message: "User created and setup link sent",
-//             user: populatedUser
-//         });
-
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ message: "Error creating user" });
-//     }
-// };
-
-
-
-
-
-
-// set password
-
 
 const createUser = async (req, res) => {
     try {
@@ -210,6 +68,51 @@ const createUser = async (req, res) => {
         }
 
         // ---------------- DATA CENTER VALIDATION ----------------
+        // let assignedDataCenters = [];
+
+        // if (newUserRole === "manager" || newUserRole === "user") {
+        //     if (!dataCenters || !Array.isArray(dataCenters) || dataCenters.length === 0) {
+        //         return res.status(400).json({
+        //             message: "At least one data center must be assigned",
+        //         });
+        //     }
+
+        //     // ---------------- MANAGER → USER STRICT VALIDATION ----------------
+        //     if (creator.role === "manager") {
+        //         const managerDataCenterIds = creator.dataCenters.map(dc =>
+        //             dc.dataCenterId.toString()
+        //         );
+
+        //         const invalidCenters = dataCenters.filter(
+        //             dcId => !managerDataCenterIds.includes(dcId)
+        //         );
+
+        //         if (invalidCenters.length > 0) {
+        //             return res.status(403).json({
+        //                 message: "You can only assign data centers that belong to you",
+        //             });
+        //         }
+        //     }
+
+        //     // ---------------- FETCH & VALIDATE DATA CENTERS ----------------
+        //     const validDataCenters = await DataCenterModel.find({
+        //         _id: { $in: dataCenters },
+        //     });
+
+        //     if (validDataCenters.length !== dataCenters.length) {
+        //         return res.status(400).json({
+        //             message: "One or more data centers are invalid",
+        //         });
+        //     }
+
+        //     assignedDataCenters = validDataCenters.map((dc) => ({
+        //         dataCenterId: dc._id,
+        //         name: dc.name,
+        //     }));
+        // }
+
+
+        // ---------------- DATA CENTER VALIDATION ----------------
         let assignedDataCenters = [];
 
         if (newUserRole === "manager" || newUserRole === "user") {
@@ -219,39 +122,46 @@ const createUser = async (req, res) => {
                 });
             }
 
-            // ---------------- MANAGER → USER STRICT VALIDATION ----------------
-            if (creator.role === "manager") {
-                const managerDataCenterIds = creator.dataCenters.map(dc =>
-                    dc.dataCenterId.toString()
-                );
+            let dataCenterIdsToValidate;
 
-                const invalidCenters = dataCenters.filter(
-                    dcId => !managerDataCenterIds.includes(dcId)
-                );
+            if (creator.role === "admin") {
+                // Admin → client sends real _id from DataCenter collection
+                dataCenterIdsToValidate = dataCenters;
+            } else if (creator.role === "manager") {
+                // Manager → client sends IDs from manager.dataCenters array
+                // Map them to the actual dataCenterId stored in manager's dataCenters
+                const managerDataCenterMap = {};
+                creator.dataCenters.forEach(dc => {
+                    managerDataCenterMap[dc._id.toString()] = dc.dataCenterId.toString();
+                });
 
-                if (invalidCenters.length > 0) {
-                    return res.status(403).json({
-                        message: "You can only assign data centers that belong to you",
-                    });
-                }
+                // Convert provided IDs to real dataCenterId
+                dataCenterIdsToValidate = dataCenters.map(dcId => {
+                    const realId = managerDataCenterMap[dcId];
+                    if (!realId) {
+                        throw new Error(`DataCenter ID ${dcId} not available for this manager`);
+                    }
+                    return realId;
+                });
             }
 
             // ---------------- FETCH & VALIDATE DATA CENTERS ----------------
             const validDataCenters = await DataCenterModel.find({
-                _id: { $in: dataCenters },
+                _id: { $in: dataCenterIdsToValidate },
             });
 
-            if (validDataCenters.length !== dataCenters.length) {
+            if (validDataCenters.length !== dataCenterIdsToValidate.length) {
                 return res.status(400).json({
                     message: "One or more data centers are invalid",
                 });
             }
 
-            assignedDataCenters = validDataCenters.map((dc) => ({
+            assignedDataCenters = validDataCenters.map(dc => ({
                 dataCenterId: dc._id,
                 name: dc.name,
             }));
         }
+
 
         // ---------------- CHECK DUPLICATE EMAIL ----------------
         const existingEmail = await userModel.findOne({ email });
@@ -331,9 +241,6 @@ const createUser = async (req, res) => {
         return res.status(500).json({ message: "Error creating user" });
     }
 };
-
-
-
 
 
 const setPassword = async (req, res) => {

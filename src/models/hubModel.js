@@ -11,7 +11,6 @@ const HubSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            unique: true,
         },
         sensorQuantity: {
             type: Number,
@@ -24,6 +23,8 @@ const HubSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+HubSchema.index({ dataCenterId: 1, name: 1 }, { unique: true });
 
 const HubModel = mongoose.model("hubs", HubSchema);
 
