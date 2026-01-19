@@ -89,7 +89,7 @@ const createHub = async (req, res) => {
 };
 
 
-// 2️⃣ Get All Hubs
+// Get All Hubs
 const getAllHubs = async (req, res) => {
     try {
         // Fetch all hubs with their datacenter names
@@ -120,7 +120,7 @@ const getAllHubs = async (req, res) => {
 };
 
 
-// 3️⃣ Get Single Hub
+// Get Single Hub
 const getHubById = async (req, res) => {
     try {
         const { hubId } = req.params;
@@ -136,7 +136,7 @@ const getHubById = async (req, res) => {
     }
 };
 
-// 4️⃣ Get Hubs by DataCenter ID
+// Get Hubs by DataCenter ID
 const getHubsByDataCenter = async (req, res) => {
     try {
         const { dataCenterId } = req.params;
@@ -165,11 +165,11 @@ const getHubsByDataCenter = async (req, res) => {
     }
 };
 
-// 5️⃣ Update Hub
+// Update Hub
 const updateHub = async (req, res) => {
     try {
         const { hubId } = req.params;
-        const { name, dataCenterId } = req.body; // user can update hub name or data center
+        const { name, dataCenterId } = req.body;
 
         // Find hub
         const hub = await HubModel.findById(hubId);
@@ -238,7 +238,7 @@ const updateHub = async (req, res) => {
     }
 };
 
-// 6️⃣ Delete Hub
+// Delete Hub
 const deleteHub = async (req, res) => {
     try {
         const { hubId } = req.params;

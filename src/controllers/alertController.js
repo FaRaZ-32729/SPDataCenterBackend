@@ -1,5 +1,4 @@
-const deviceModel = require("../models/deviceModel");
-const venueModel = require("../models/venueModal");
+
 
 // Returns alerts for all venues under an organization
 const getAlerts = async (req, res) => {

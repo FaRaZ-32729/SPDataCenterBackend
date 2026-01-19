@@ -2,6 +2,7 @@ const RackModel = require("../models/rackModel");
 const DataCenterModel = require("../models/DataCenterModel");
 const HubModel = require("../models/hubModel");
 const SensorModel = require("../models/sersorModel");
+const RackClusterModel = require("../models/rackClusterModel");
 
 //  CREATE RACK
 const createRack = async (req, res) => {
@@ -148,6 +149,94 @@ const getSingleRack = async (req, res) => {
     } catch (error) {
         console.error("Get Single Rack Error:", error);
         return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// GET RACKS BY RACK-CLUSTER-ID 
+const getRacksByClusterId = async (req, res) => {
+    try {
+        const { clusterId } = req.params;
+
+        if (!clusterId) {
+            return res.status(400).json({
+                message: "Rack cluster ID is required",
+            });
+        }
+
+        // ----------- FIND CLUSTER -----------
+        const cluster = await RackClusterModel.findById(clusterId);
+
+        if (!cluster) {
+            return res.status(404).json({
+                message: "Rack cluster not found",
+            });
+        }
+
+        if (!cluster.racks || cluster.racks.length === 0) {
+            return res.status(200).json({
+                message: "No racks found in this cluster",
+                data: [],
+            });
+        }
+
+        // ----------- EXTRACT RACK IDS -----------
+        const rackIds = cluster.racks.map((rack) => rack._id);
+
+        // ----------- FETCH FULL RACK DATA -----------
+        const racks = await RackModel.find({ _id: { $in: rackIds } })
+            .populate("dataCenter.id", "name")
+            .populate("hub.id", "name")
+            .populate("sensors._id", "name");
+
+        return res.status(200).json({
+            message: "Racks fetched successfully",
+            count: racks.length,
+            racks,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to fetch racks by cluster ID",
+            error: error.message,
+        });
+    }
+};
+
+// GET RACKS BY DATA-CENTER-ID
+const getRacksByDataCenterId = async (req, res) => {
+    try {
+        const { dataCenterId } = req.params;
+
+        if (!dataCenterId) {
+            return res.status(400).json({
+                message: "Data center ID is required",
+            });
+        }
+
+        const racks = await RackModel.find({
+            "dataCenter.id": dataCenterId,
+        })
+            .sort({ createdAt: -1 })
+            .populate("dataCenter.id", "name")
+            .populate("hub.id", "name")
+            .populate("sensors._id", "name");
+
+        if (!racks || racks.length === 0) {
+            return res.status(200).json({
+                message: "No racks found for this data center",
+            });
+        }
+
+        return res.status(200).json({
+            message: "Racks fetched successfully",
+            count: racks.length,
+            racks,
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to fetch racks by data center ID",
+            error: error.message,
+        });
     }
 };
 
@@ -307,4 +396,6 @@ module.exports = {
     getSingleRack,
     updateRack,
     deleteRack,
+    getRacksByClusterId,
+    getRacksByDataCenterId
 };

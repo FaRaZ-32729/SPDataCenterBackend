@@ -3,7 +3,6 @@ const bcrypt = require("bcryptjs");
 const sendEmail = require("../utils/sendEmail");
 const DataCenterModel = require("../models/DataCenterModel");
 const mongoose = require("mongoose");
-const venueModel = require("../models/venueModal");
 
 
 //get all users for admin

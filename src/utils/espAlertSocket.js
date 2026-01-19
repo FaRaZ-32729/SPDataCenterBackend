@@ -1,5 +1,4 @@
 const WebSocket = require("ws");
-const deviceModel = require("../models/deviceModel");
 
 const espAlertSocket = (server) => {
     const wSocket = new WebSocket.Server({ noServer: true });

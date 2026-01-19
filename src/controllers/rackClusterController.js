@@ -122,63 +122,6 @@ const getSingleRackCluster = async (req, res) => {
 };
 
 // ================= UPDATE RACK CLUSTER =================
-// const updateRackCluster = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const { name, ackitName, racks } = req.body;
-
-//         if (!id) {
-//             return res
-//                 .status(400)
-//                 .json({ message: "Rack cluster ID is required" });
-//         }
-
-//         // ----------- VALIDATE ACKIT NAME IF PROVIDED -----------
-//         if (ackitName) {
-//             const ackitExists = await AckitModel.findOne({ name: ackitName });
-//             if (!ackitExists) {
-//                 return res.status(404).json({
-//                     message: "Ackit with this name does not exist",
-//                 });
-//             }
-//         }
-
-//         if (racks && (!Array.isArray(racks) || racks.length === 0)) {
-//             return res.status(400).json({
-//                 message: "Racks must be a non-empty array",
-//             });
-//         }
-
-//         const updatedCluster = await RackClusterModel.findByIdAndUpdate(
-//             id,
-//             { name, ackitName, racks },
-//             { new: true, runValidators: true }
-//         );
-
-//         if (!updatedCluster) {
-//             return res.status(404).json({
-//                 message: "Rack cluster not found",
-//             });
-//         }
-
-//         return res.status(200).json({
-//             message: "Rack cluster updated successfully",
-//             data: updatedCluster,
-//         });
-//     } catch (error) {
-//         if (error.code === 11000) {
-//             return res.status(409).json({
-//                 message: "Rack cluster with this name already exists",
-//             });
-//         }
-
-//         return res.status(500).json({
-//             message: "Failed to update rack cluster",
-//             error: error.message,
-//         });
-//     }
-// };
-
 const updateRackCluster = async (req, res) => {
     try {
         const { id } = req.params;
