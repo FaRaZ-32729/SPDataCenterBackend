@@ -68,51 +68,6 @@ const createUser = async (req, res) => {
         }
 
         // ---------------- DATA CENTER VALIDATION ----------------
-        // let assignedDataCenters = [];
-
-        // if (newUserRole === "manager" || newUserRole === "user") {
-        //     if (!dataCenters || !Array.isArray(dataCenters) || dataCenters.length === 0) {
-        //         return res.status(400).json({
-        //             message: "At least one data center must be assigned",
-        //         });
-        //     }
-
-        //     // ---------------- MANAGER → USER STRICT VALIDATION ----------------
-        //     if (creator.role === "manager") {
-        //         const managerDataCenterIds = creator.dataCenters.map(dc =>
-        //             dc.dataCenterId.toString()
-        //         );
-
-        //         const invalidCenters = dataCenters.filter(
-        //             dcId => !managerDataCenterIds.includes(dcId)
-        //         );
-
-        //         if (invalidCenters.length > 0) {
-        //             return res.status(403).json({
-        //                 message: "You can only assign data centers that belong to you",
-        //             });
-        //         }
-        //     }
-
-        //     // ---------------- FETCH & VALIDATE DATA CENTERS ----------------
-        //     const validDataCenters = await DataCenterModel.find({
-        //         _id: { $in: dataCenters },
-        //     });
-
-        //     if (validDataCenters.length !== dataCenters.length) {
-        //         return res.status(400).json({
-        //             message: "One or more data centers are invalid",
-        //         });
-        //     }
-
-        //     assignedDataCenters = validDataCenters.map((dc) => ({
-        //         dataCenterId: dc._id,
-        //         name: dc.name,
-        //     }));
-        // }
-
-
-        // ---------------- DATA CENTER VALIDATION ----------------
         let assignedDataCenters = [];
 
         if (newUserRole === "manager" || newUserRole === "user") {

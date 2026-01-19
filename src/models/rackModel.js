@@ -2,36 +2,61 @@ const mongoose = require("mongoose");
 
 const RackSchema = new mongoose.Schema(
     {
-        dataCenterId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "dataCenters",
+        name: {
+            type: String,
             required: true,
         },
 
-        hubId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "hubs",
-            required: true,
-        },
-
-        sensorIds: [
-            {
+        dataCenter: {
+            id: {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "sensors",
+                ref: "dataCenters",
                 required: true,
+            },
+            name: {
+                type: String,
+                required: true,
+            },
+        },
+
+        hub: {
+            id: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "hubs",
+                required: true,
+            },
+            name: {
+                type: String,
+                required: true,
+            },
+        },
+
+        sensors: [
+            {
+                _id: false,
+
+                _id: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: "sensors",
+                    required: true,
+                },
+                name: {
+                    type: String,
+                    required: true,
+                },
             },
         ],
 
         row: {
             type: String,
             required: true,
-            trim: true, // e.g. "r1"
+            trim: true,
         },
 
         col: {
             type: String,
             required: true,
-            trim: true, // e.g. "c1"
+            trim: true,
         },
 
         conditions: [
@@ -50,7 +75,7 @@ const RackSchema = new mongoose.Schema(
                     type: Number,
                     required: true,
                 },
-            }
+            },
         ],
 
         tempAlert: {

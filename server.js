@@ -59,7 +59,7 @@ app.use("/venue", authenticate, venueRouter);
 app.use("/device", authenticate, deviceRouter);
 app.use("/hub", hubRouter);
 app.use("/rack", rackRouter);
-app.use("/alert", authenticate, alertsRouter);
+app.use("/alert", authenticate, alertsRouter);  
 
 app.get("/", (req, res) => {
     res.send("Hellow FaRaZ To IOTFIY-SindhPolice-DataCenter Server");
