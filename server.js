@@ -16,6 +16,7 @@ const alertsRouter = require("./src/routes/alertsRouter");
 const hubRouter = require("./src/routes/hubRouter");
 const rackRouter = require("./src/routes/rackRouter");
 const acKitRouter = require("./src/routes/acKitRouter");
+const rackClusterRouter = require("./src/routes/rackClusterRouter");
 const authenticate = require("./src/middlewere/authMiddleware");
 
 
@@ -61,6 +62,7 @@ app.use("/device", authenticate, deviceRouter);
 app.use("/hub", hubRouter);
 app.use("/rack", rackRouter);
 app.use("/ackit", acKitRouter);
+app.use("/rack-cluster", rackClusterRouter);
 app.use("/alert", authenticate, alertsRouter);
 
 app.get("/", (req, res) => {

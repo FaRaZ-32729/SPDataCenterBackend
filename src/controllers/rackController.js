@@ -99,7 +99,7 @@ const createRack = async (req, res) => {
 
             sensors: sensors.map(sensor => ({
                 _id: sensor._id,
-                name: sensor.name || sensor.sensorName, // adjust field name if needed
+                name: sensor.name || sensor.sensorName,
             })),
 
             row,
