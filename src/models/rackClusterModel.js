@@ -9,6 +9,12 @@ const RackClusterSchema = new mongoose.Schema(
             trim: true,
         },
 
+        dataCenterId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "dataCenters",
+            required: true,
+        },
+
         ackitName: {
             type: String,
             required: true,
