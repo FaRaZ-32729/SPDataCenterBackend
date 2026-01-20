@@ -156,8 +156,6 @@ const createRackCluster = async (req, res) => {
     }
 };
 
-
-
 // ================= GET ALL RACK CLUSTERS =================
 const getAllRackClusters = async (req, res) => {
     try {
@@ -387,7 +385,6 @@ const updateRackCluster = async (req, res) => {
         });
     }
 };
-
 
 // ================= DELETE RACK CLUSTER =================
 const deleteRackCluster = async (req, res) => {

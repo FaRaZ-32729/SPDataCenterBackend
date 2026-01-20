@@ -1,15 +1,14 @@
 const WebSocket = require("ws");
 
 // ================= CONFIG =================
-const HUB_ID = "696a3fd213d499c0f40ef98d"; 
+const HUB_ID = "696a3fd213d499c0f40ef98d";
 const WS_SERVER_URL = "ws://localhost:5053/ws/alerts";
-
-// Simulate 1–15 sensors
-const SENSOR_COUNT = Math.floor(Math.random() * 15) + 1;
+const SENSOR_COUNT = 15;
+const INTERVAL_MS = 60 * 1000; // 1 minute
 
 // ================= SENSOR LIST =================
-const sensors = Array.from({ length: SENSOR_COUNT }, (_, index) => ({
-    sensorName: `S-${index + 1}`,
+const sensors = Array.from({ length: SENSOR_COUNT }, (_, i) => ({
+    sensorName: `S-${i + 1}`,
 }));
 
 // ================= WEBSOCKET CONNECTION =================
@@ -17,9 +16,11 @@ const ws = new WebSocket(WS_SERVER_URL);
 
 ws.on("open", () => {
     console.log("✅ Hub connected to backend:", HUB_ID);
+    console.log(`📡 Simulating ${SENSOR_COUNT} sensors`);
 
-    // Send data every 5 seconds
     setInterval(() => {
+        console.log("⏱️ Sending sensor batch...");
+
         sensors.forEach((sensor) => {
             const payload = {
                 hubId: HUB_ID,
@@ -30,9 +31,9 @@ ws.on("open", () => {
             };
 
             ws.send(JSON.stringify(payload));
-            console.log("📡 Data sent:", payload);
+            console.log("📤 Sent:", payload);
         });
-    }, 60 * 1000);
+    }, INTERVAL_MS);
 });
 
 ws.on("error", (err) => {
@@ -45,9 +46,9 @@ ws.on("close", () => {
 
 // ================= HELPERS =================
 function getRandomTemp() {
-    return +(20 + Math.random() * 20).toFixed(2);
+    return Number((20 + Math.random() * 20).toFixed(2)); // 20–40°C
 }
 
 function getRandomHumidity() {
-    return +(30 + Math.random() * 50).toFixed(2);
+    return Number((30 + Math.random() * 50).toFixed(2)); // 30–80%
 }
