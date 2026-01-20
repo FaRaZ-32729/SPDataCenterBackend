@@ -203,8 +203,8 @@ const RackSchema = new mongoose.Schema(
         // 🔥 RACK LEVEL STATUS
         tempA: { type: Boolean, default: false },
         humiA: { type: Boolean, default: false },
-        // tempV: { type: Number, default: null },
-        // humiV: { type: Number, default: null },
+        tempV: { type: Number, default: null },
+        humiV: { type: Number, default: null },
     },
     { timestamps: true }
 );

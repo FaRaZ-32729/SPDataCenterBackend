@@ -107,8 +107,8 @@ const espAlertSocket = () => {
 
                 rack.tempA = tempA;
                 rack.humiA = humiA;
-                // rack.tempV = maxTemp;
-                // rack.humiV = maxHumi;
+                rack.tempV = maxTemp;
+                rack.humiV = maxHumi;
 
                 await rack.save();
 

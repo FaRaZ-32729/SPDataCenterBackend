@@ -1,7 +1,8 @@
 const express = require("express");
-const { getAlerts } = require("../controllers/alertController");
+const { getAlertsByDataCenterId, getAlertsByRackClusterId } = require("../controllers/alertController");
 const router = express.Router();
 
-router.get("/:organizationId", getAlerts);
+router.get("/by-data-center/:dataCenterId", getAlertsByDataCenterId);
+router.get("/by-rack-cluster/:rackClusterId", getAlertsByRackClusterId);
 
 module.exports = router;
