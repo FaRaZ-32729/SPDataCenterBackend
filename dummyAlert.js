@@ -1,56 +1,53 @@
 const WebSocket = require("ws");
 
-const SERVER_URL = "wss://polekit.iotfiysolutions.com/ws/alerts";
+// ================= CONFIG =================
+const HUB_ID = "696a3fd213d499c0f40ef98d"; 
+const WS_SERVER_URL = "ws://localhost:5053/ws/alerts";
 
-// Dummy devices
-const DEVICES = [
-    "device-001",
-    "device-002",
-    "device-003",
-    "device-004",
-    "device-005",
-    "device-006",
-];
+// Simulate 1–15 sensors
+const SENSOR_COUNT = Math.floor(Math.random() * 15) + 1;
 
-// Function to randomly return "DETECTED" or "NORMAL"
-function randomVoltageStatus() {
-    return Math.random() > 0.8 ? "DETECTED" : "NORMAL";
+// ================= SENSOR LIST =================
+const sensors = Array.from({ length: SENSOR_COUNT }, (_, index) => ({
+    sensorName: `S-${index + 1}`,
+}));
+
+// ================= WEBSOCKET CONNECTION =================
+const ws = new WebSocket(WS_SERVER_URL);
+
+ws.on("open", () => {
+    console.log("✅ Hub connected to backend:", HUB_ID);
+
+    // Send data every 5 seconds
+    setInterval(() => {
+        sensors.forEach((sensor) => {
+            const payload = {
+                hubId: HUB_ID,
+                sensorName: sensor.sensorName,
+                temperature: getRandomTemp(),
+                humidity: getRandomHumidity(),
+                timestamp: new Date().toISOString(),
+            };
+
+            ws.send(JSON.stringify(payload));
+            console.log("📡 Data sent:", payload);
+        });
+    }, 60 * 1000);
+});
+
+ws.on("error", (err) => {
+    console.error("❌ WebSocket error:", err.message);
+});
+
+ws.on("close", () => {
+    console.log("🔌 Hub disconnected");
+});
+
+// ================= HELPERS =================
+function getRandomTemp() {
+    return +(20 + Math.random() * 20).toFixed(2);
 }
 
-// Simulate single device connection
-function simulateDevice(deviceId) {
-    const ws = new WebSocket(SERVER_URL);
-
-    ws.on("open", () => {
-        console.log(`[${deviceId}] Connected to WebSocket Server`);
-
-        // send data every 10 seconds
-        const interval = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-                const payload = {
-                    deviceId,
-                    voltage: randomVoltageStatus(),
-                };
-
-                ws.send(JSON.stringify(payload));
-                console.log(`[${deviceId}] Sent:`, payload);
-            }
-        }, 10000);
-
-        ws.on("close", () => {
-            console.log(`[${deviceId}] Disconnected from server`);
-            clearInterval(interval);
-        });
-
-        ws.on("error", (err) => {
-            console.error(`[${deviceId}] WebSocket Error:`, err.message);
-        });
-
-        ws.on("message", (msg) => {
-            console.log(`[${deviceId}] Message from server: ${msg.toString()}`);
-        });
-    });
+function getRandomHumidity() {
+    return +(30 + Math.random() * 50).toFixed(2);
 }
-
-// Start simulation for all devices
-DEVICES.forEach((id) => simulateDevice(id));

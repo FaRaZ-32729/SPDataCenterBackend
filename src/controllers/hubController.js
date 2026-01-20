@@ -1,6 +1,7 @@
 const DataCenterModel = require("../models/DataCenterModel");
 const HubModel = require("../models/hubModel");
 const SensorModel = require("../models/sersorModel");
+const mongoose = require("mongoose");
 
 
 
@@ -165,6 +166,52 @@ const getHubsByDataCenter = async (req, res) => {
     }
 };
 
+// Get Sensors By  Hub-Id
+const getSensorsByHubId = async (req, res) => {
+    try {
+        const { hubId } = req.params;
+
+        // Validate MongoDB ObjectId
+        if (!mongoose.Types.ObjectId.isValid(hubId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid hubId",
+            });
+        }
+
+        // Check if hub exists
+        const hub = await HubModel.findById(hubId);
+        if (!hub) {
+            return res.status(404).json({
+                success: false,
+                message: "Hub not found",
+            });
+        }
+
+        // Fetch sensors for this hub
+        const sensors = await SensorModel.find({ hubId })
+            .select("-__v")
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            hub: {
+                _id: hub._id,
+                name: hub.name,
+                sensorQuantity: hub.sensorQuantity,
+            },
+            count: sensors.length,
+            sensors,
+        });
+    } catch (error) {
+        console.error("getSensorsByHubId error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+        });
+    }
+};
+
 // Update Hub
 const updateHub = async (req, res) => {
     try {
@@ -258,4 +305,4 @@ const deleteHub = async (req, res) => {
 };
 
 
-module.exports = { createHub, getAllHubs, getHubById, getHubsByDataCenter, updateHub, deleteHub };
+module.exports = { createHub, getAllHubs, getHubById, getHubsByDataCenter, updateHub, deleteHub, getSensorsByHubId };

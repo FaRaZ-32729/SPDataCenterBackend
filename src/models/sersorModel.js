@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const SensorSchema = new mongoose.Schema(
     {
-        // dataCenterId: {
-        //     type: mongoose.Schema.Types.ObjectId,
-        //     ref: "dataCenters",
-        //     required: true,
-        // },
         hubId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "hubs",

@@ -59,7 +59,7 @@ app.use("/hub", hubRouter);
 app.use("/rack", rackRouter);
 app.use("/ackit", acKitRouter);
 app.use("/rack-cluster", rackClusterRouter);
-app.use("/alert", authenticate, alertsRouter);
+app.use("/alert", alertsRouter);
 
 app.get("/", (req, res) => {
     res.send("Hellow FaRaZ To IOTFIY-SindhPolice-DataCenter Server");
@@ -68,7 +68,7 @@ app.get("/", (req, res) => {
 
 const alertWss = espAlertSocket(server);
 
-// alerts ws://ip/localhost:5000/ws/alerts
+// alerts ws://ip/localhost:5053/ws/alerts
 server.on("upgrade", (req, socket, head) => {
     if (req.url === "/ws/alerts") {
         alertWss.handleUpgrade(req, socket, head, (ws) => {

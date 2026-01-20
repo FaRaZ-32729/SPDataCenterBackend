@@ -78,15 +78,25 @@ const RackSchema = new mongoose.Schema(
             },
         ],
 
-        tempAlert: {
+        tempA: {
             type: Boolean,
             default: false,
         },
 
-        humidityAlert: {
+        humiA: {
             type: Boolean,
             default: false,
         },
+
+        tempV: {
+            type: Number,
+            default: null
+        },
+
+        humiV: {
+            type: Number,
+            default: null
+        }
     },
     { timestamps: true }
 );
