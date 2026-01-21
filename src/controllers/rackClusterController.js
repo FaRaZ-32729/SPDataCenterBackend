@@ -3,6 +3,7 @@ const AckitModel = require("../models/ackitModel");
 const RackModel = require("../models/rackModel");
 const mongoose = require("mongoose");
 const DataCenterModel = require("../models/DataCenterModel");
+const evaluateRackCluster = require("../utils/evaluateRackCluster");
 
 // ================= CREATE RACK CLUSTER =================
 
@@ -468,11 +469,59 @@ const deleteRackCluster = async (req, res) => {
 };
 
 
+
+const getRackClusterMean = async (req, res) => {
+    try {
+        const { clusterId } = req.params;
+
+        const cluster = await RackClusterModel.findById(clusterId);
+        if (!cluster) return res.status(404).json({ message: "Cluster not found" });
+
+        // Run evaluation for all racks in this cluster
+        // Note: we pass all rackIds to your evaluateRackCluster function
+        const rackIds = cluster.racks.map(r => r._id);
+
+        let result = null;
+        for (const rackId of rackIds) {
+            result = await evaluateRackCluster(rackId); // updates cluster state
+        }
+
+        // Send result + trigger ESP32 signal if needed
+        if (result) {
+            // 🔌 Here you can emit WebSocket or MQTT signal to ESP32
+            // Example:
+            // controllerSocket.send(JSON.stringify({
+            //     type: "ACKIT_CONTROL",
+            //     clusterId: result.clusterId,
+            //     ac: result.ackitStatus ? 1 : 0,
+            //     meanTemp: result.meanTemp
+            // }));
+
+            return res.json({
+                message: "Cluster evaluated",
+                cluster: result.clusterId,
+                meanTemp: result.meanTemp,
+                meanHumi: result.meanHumi,
+                ackitStatus: result.ackitStatus ? "ON" : "OFF"
+            });
+        }
+
+        res.status(400).json({ message: "No racks found for evaluation" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+
+
+
 module.exports = {
     createRackCluster,
     getAllRackClusters,
     getSingleRackCluster,
     updateRackCluster,
     deleteRackCluster,
-    getRackClustersByDataCenterId
+    getRackClustersByDataCenterId,
+    getRackClusterMean
 }

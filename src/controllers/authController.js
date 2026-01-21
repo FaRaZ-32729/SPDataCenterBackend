@@ -5,14 +5,21 @@ const sendEmail = require("../utils/sendEmail");
 const DataCenterModel = require("../models/DataCenterModel");
 const dotenv = require("dotenv");
 const { validatePassword } = require("../utils/passwordValidator");
+const validateTimerInSeconds = require("../utils/timeValidator");
 
 dotenv.config();
 
 // api for registering admin
 const registerAdmin = async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        if (!name || !email || !password) return res.status(400).json({ message: "All Fields Are Required" });
+        const { name, email, password, timer } = req.body;
+        if (!name || !email || !password || !timer) return res.status(400).json({ message: "All Fields Are Required" });
+
+        const { validT, tMessage } = validateTimerInSeconds(timer);
+
+        if (!validT) {
+            return res.status(400).json({ tMessage });
+        }
 
         // Use reusable password validator
         const { valid, message } = validatePassword(password);
@@ -28,6 +35,7 @@ const registerAdmin = async (req, res) => {
         const newAdmin = await userModel.create({
             name,
             email,
+            timer,
             password: hashedPassword,
             role: "admin",
             isActive: true,
@@ -94,7 +102,9 @@ const createUser = async (req, res) => {
                 dataCenterIdsToValidate = dataCenters.map(dcId => {
                     const realId = managerDataCenterMap[dcId];
                     if (!realId) {
-                        throw new Error(`DataCenter ID ${dcId} not available for this manager`);
+                        // throw new Error(`DataCenter ID ${dcId} not available for this manager`);
+                        return res.status(404).json({ message: `DataCenter ID ${dcId} not available for this manager` });
+
                     }
                     return realId;
                 });
@@ -132,7 +142,19 @@ const createUser = async (req, res) => {
         });
 
         // ---------------- CREATE USER ----------------
-        const newUser = await userModel.create({
+        // const newUser = await userModel.create({
+        //     name,
+        //     email,
+        //     role: newUserRole,
+        //     createdBy: creator.role,
+        //     creatorId: creator._id,
+        //     setupToken: token,
+        //     isActive: false,
+        //     isVerified: false,
+        //     dataCenters: assignedDataCenters,
+        // });
+        // ---------------- CREATE USER ----------------
+        const newUserData = {
             name,
             email,
             role: newUserRole,
@@ -142,7 +164,29 @@ const createUser = async (req, res) => {
             isActive: false,
             isVerified: false,
             dataCenters: assignedDataCenters,
-        });
+        };
+
+        // TIMER LOGIC
+        if (creator.role === "admin" && newUserRole === "manager") {
+            // Admin must provide timer for manager
+            if (!req.body.timer) {
+                return res.status(400).json({ message: "Timer is required for manager" });
+            }
+
+            const { validT, tMessage } = validateTimerInSeconds(req.body.timer);
+
+            if (!validT) {
+                return res.status(400).json({ tMessage });
+            }
+
+            newUserData.timer = req.body.timer;
+        } else if (creator.role === "manager" && newUserRole === "user") {
+            // Users inherit manager's timer
+            newUserData.timer = creator.timer;
+        }
+
+        const newUser = await userModel.create(newUserData);
+
 
         // ---------------- SEND SETUP EMAIL ----------------
         const setupLink = `${process.env.FRONTEND_URL}/setup-password/${token}`;

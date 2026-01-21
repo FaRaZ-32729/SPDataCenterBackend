@@ -36,7 +36,20 @@ const RackClusterSchema = new mongoose.Schema(
                 },
             },
         ],
+        meanTemp: {
+            type: Number,
+            default: null
+        },
+        meanHumi: {
+            type: Number,
+            default: null
+        },
+        ackitStatus: {
+            type: Boolean,
+            default: false
+        }
     },
+
     { timestamps: true }
 );
 

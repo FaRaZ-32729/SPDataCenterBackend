@@ -4,7 +4,7 @@ const WebSocket = require("ws");
 const HUB_ID = "696a3fd213d499c0f40ef98d";
 const WS_SERVER_URL = "ws://localhost:5053/ws/alerts";
 const SENSOR_COUNT = 15;
-const INTERVAL_MS = 60 * 1000; // 1 minute
+const INTERVAL_MS =  10000; // 1 minute
 
 // ================= SENSOR LIST =================
 const sensors = Array.from({ length: SENSOR_COUNT }, (_, i) => ({

@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const sendEmail = require("../utils/sendEmail");
 const DataCenterModel = require("../models/DataCenterModel");
 const mongoose = require("mongoose");
+const validateTimerInSeconds = require("../utils/timeValidator");
 
 
 //get all users for admin
@@ -137,61 +138,22 @@ const updateUserStatus = async (req, res) => {
 };
 
 // only update name , email and password
-// const updateUserProfile = async (req, res) => {
-//     try {
-//         const { id } = req.params;
-//         const { name, email, password } = req.body;
-
-//         const user = await userModel.findById(id);
-//         if (!user) {
-//             return res.status(404).json({ message: "User not found" });
-//         }
-
-//         // Update name if provided
-//         if (name) user.name = name;
-
-//         // Update email if provided and not already in use
-//         if (email && email !== user.email) {
-//             const emailExists = await userModel.findOne({ email });
-//             if (emailExists) {
-//                 return res.status(400).json({ message: "Email already in use" });
-//             }
-//             user.email = email;
-//         }
-
-//         // Update password if provided
-//         if (password) {
-//             // const salt = await bcrypt.genSalt(10);
-//             user.password = await bcrypt.hash(password, 10);
-//         }
-
-//         // Save the user
-//         await user.save();
-
-//         res.status(200).json({
-//             message: "User updated successfully",
-//             user,
-//         });
-//     } catch (err) {
-//         console.error("Error updating user:", err);
-//         res.status(500).json({ message: "Error updating user" });
-//     }
-// };
-
 const updateUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, email, password, dataCenters } = req.body;
+        const { name, email, password, dataCenters, timer } = req.body;
 
         const user = await userModel.findById(id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        //  Update name if provided
+        const updater = req.user; // logged-in user
+
+        // --------------- NAME ----------------
         if (name) user.name = name;
 
-        //  Update email if provided and not already in use
+        // --------------- EMAIL ----------------
         if (email && email !== user.email) {
             const emailExists = await userModel.findOne({ email });
             if (emailExists) {
@@ -200,24 +162,22 @@ const updateUserProfile = async (req, res) => {
             user.email = email;
         }
 
-        //  Update password if provided
+        // --------------- PASSWORD ----------------
         if (password) {
             user.password = await bcrypt.hash(password, 10);
         }
 
-        //  Update dataCenters if provided
+        // --------------- DATA CENTERS ----------------
         if (dataCenters && Array.isArray(dataCenters)) {
             const validatedDataCenters = [];
 
             for (const dc of dataCenters) {
-                // Each dc should contain only dataCenterId
                 if (!dc.dataCenterId) {
                     return res.status(400).json({
                         message: "Each dataCenter must have dataCenterId",
                     });
                 }
 
-                // Check if the DataCenter exists
                 const existingDC = await DataCenterModel.findById(dc.dataCenterId);
                 if (!existingDC) {
                     return res.status(404).json({
@@ -225,30 +185,47 @@ const updateUserProfile = async (req, res) => {
                     });
                 }
 
-                // Push with the name fetched from DB
                 validatedDataCenters.push({
                     dataCenterId: existingDC._id,
                     name: existingDC.name,
                 });
             }
 
-            // Replace user's dataCenters with validated array
             user.dataCenters = validatedDataCenters;
         }
 
+        // --------------- TIMER ----------------
+        // Only admin can update a manager's timer
+        if (updater.role === "admin" && user.role === "manager" && timer !== undefined) {
 
-        // Save user
+            const { validT, tMessage } = validateTimerInSeconds(timer);
+
+            if (!validT) {
+                return res.status(400).json({ tMessage });
+            }
+
+            user.timer = timer;
+
+            // Update all users under this manager
+            await userModel.updateMany(
+                { creatorId: user._id },
+                { $set: { timer: timer } }
+            );
+        }
+
         await user.save();
 
         res.status(200).json({
             message: "User updated successfully",
             user,
         });
+
     } catch (err) {
         console.error("Error updating user:", err);
         res.status(500).json({ message: "Error updating user" });
     }
 };
+
 
 //delete user
 const deleteUser = async (req, res) => {
@@ -432,6 +409,46 @@ const getUsersByDataCenterId = async (req, res) => {
     }
 };
 
+// admin can only update the time
+const updateAdminTimer = async (req, res) => {
+    try {
+        const admin = req.user; // logged-in user
+        const { timer } = req.body;
+
+        // ---------------- ROLE CHECK ----------------
+        if (admin.role !== "admin") {
+            return res.status(403).json({
+                message: "Only admin can update admin timer",
+            });
+        }
+
+        // ---------------- VALIDATION ----------------
+        if (!timer) {
+            return res.status(400).json({ message: "Timer is required" });
+        }
+
+        const { validT, tMessage } = validateTimerInSeconds(timer);
+
+        if (!validT) {
+            return res.status(400).json({ tMessage });
+        }
+
+        // ---------------- UPDATE ADMIN TIMER ----------------
+        admin.timer = timer;
+        await admin.save();
+
+        return res.status(200).json({
+            message: "Admin timer updated successfully",
+            timer: admin.timer,
+        });
+
+    } catch (err) {
+        console.error("Update Admin Timer Error:", err);
+        return res.status(500).json({ message: "Server error" });
+    }
+};
+
+
 // get users status
 const getUserStatus = async (req, res) => {
     try {
@@ -454,4 +471,4 @@ const getUserStatus = async (req, res) => {
 };
 
 
-module.exports = { getAllUsers, updateUserStatus, updateUserProfile, deleteUser, getUsersByDataCenterId, addDataCenterToUser, removeDataCenterFromUser, getUserStatus, getUsersByCreatorId }
+module.exports = { updateAdminTimer, getAllUsers, updateUserStatus, updateUserProfile, deleteUser, getUsersByDataCenterId, addDataCenterToUser, removeDataCenterFromUser, getUserStatus, getUsersByCreatorId }

@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
             },
         }
     ],
+    timer: { type: String },
 
 }, { timestamps: true });
 

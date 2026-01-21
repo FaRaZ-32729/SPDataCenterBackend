@@ -30,81 +30,96 @@ const espAlertSocket = () => {
                     return;
                 }
 
-                // 3️⃣ FIND RACK THAT CONTAINS THIS SENSOR
+                // 3️⃣ Find the rack that contains this sensor
                 const rack = await RackModel.findOne({
                     "hub.id": hub._id,
                     "sensors._id": sensor._id,
                 });
 
                 if (!rack) {
-                    console.log(
-                        `⚠️ Ignored: Sensor ${sensorName} not mapped to any rack`
-                    );
+                    console.log(`⚠️ Ignored: Sensor ${sensorName} not mapped to any rack`);
                     return;
                 }
 
-                // ================= SENSOR UPDATE =================
+                // ================= Rebuild Sensor Values from scratch =================
+                const newSensorValues = [];
 
-                const sensorIndex = rack.sensorValues.findIndex(
-                    (s) => s.sensorId.toString() === sensor._id.toString()
-                );
+                for (let s of rack.sensors) {
+                    let value = null;
 
-                if (sensorIndex !== -1) {
-                    // Update existing sensor
-                    rack.sensorValues[sensorIndex].temperature = temperature;
-                    rack.sensorValues[sensorIndex].humidity = humidity;
-                    rack.sensorValues[sensorIndex].updatedAt = new Date();
-                } else {
-                    // Push new sensor
-                    rack.sensorValues.push({
-                        sensorId: sensor._id,
-                        sensorName,
-                        temperature,
-                        humidity,
-                        updatedAt: new Date(),
-                    });
-                }
-
-                // ================= DOMINANT SENSOR =================
-
-                let dominantSensor = null;
-
-                rack.sensorValues.forEach((s) => {
-                    if (!dominantSensor || s.temperature > dominantSensor.temperature) {
-                        dominantSensor = s;
-                    }
-                });
-
-                const maxTemp = dominantSensor.temperature;
-                const maxHumi = dominantSensor.humidity;
-
-                // ================= CONDITION CHECK =================
-
-                let tempA = false;
-                let humiA = false;
-
-                rack.conditions.forEach((condition) => {
-                    if (condition.type === "temp") {
-                        if (
-                            (condition.operator === ">" && maxTemp > condition.value) ||
-                            (condition.operator === "<" && maxTemp < condition.value)
-                        ) {
-                            tempA = true;
+                    // If incoming data is for this sensor, use it
+                    if (s._id.toString() === sensor._id.toString()) {
+                        value = { temperature, humidity, sensorName: s.name };
+                    } else {
+                        // Check if we already have old values for this sensor
+                        const oldValue = rack.sensorValues.find(v => v.sensorId.toString() === s._id.toString());
+                        if (oldValue) {
+                            value = {
+                                temperature: oldValue.temperature,
+                                humidity: oldValue.humidity,
+                                sensorName: s.name
+                            };
                         }
                     }
 
-                    if (condition.type === "humidity") {
-                        if (
-                            (condition.operator === ">" && maxHumi > condition.value) ||
-                            (condition.operator === "<" && maxHumi < condition.value)
-                        ) {
+                    if (value) {
+                        newSensorValues.push({
+                            sensorId: s._id,
+                            sensorName: value.sensorName,
+                            temperature: value.temperature,
+                            humidity: value.humidity,
+                            updatedAt: new Date(),
+                        });
+                    }
+                }
+
+                // Assign the rebuilt array
+                rack.sensorValues = newSensorValues;
+
+                // ================= Find Dominant Sensor =================
+                const validSensors = rack.sensorValues.filter(s => s.temperature != null);
+
+                let dominantSensor = null;
+                let maxTemp = null;
+                let maxHumi = null;
+
+                if (validSensors.length > 0) {
+                    dominantSensor = validSensors.reduce((max, s) =>
+                        s.temperature > max.temperature ? s : max
+                        , validSensors[0]);
+
+                    maxTemp = dominantSensor.temperature;
+                    maxHumi = dominantSensor.humidity;
+
+                    console.log(
+                        "Dominant Sensor:", dominantSensor.sensorName,
+                        "Temp:", maxTemp,
+                        "Humi:", maxHumi
+                    );
+                } else {
+                    console.log("⚠️ No sensor with valid temperature found!");
+                }
+
+                // ================= Check Conditions =================
+                let tempA = false;
+                let humiA = false;
+
+                rack.conditions.forEach(condition => {
+                    if (condition.type === "temp" && maxTemp != null) {
+                        if ((condition.operator === ">" && maxTemp > condition.value) ||
+                            (condition.operator === "<" && maxTemp < condition.value)) {
+                            tempA = true;
+                        }
+                    }
+                    if (condition.type === "humidity" && maxHumi != null) {
+                        if ((condition.operator === ">" && maxHumi > condition.value) ||
+                            (condition.operator === "<" && maxHumi < condition.value)) {
                             humiA = true;
                         }
                     }
                 });
 
-                // ================= UPDATE RACK =================
-
+                // ================= Update Rack =================
                 rack.tempA = tempA;
                 rack.humiA = humiA;
                 rack.tempV = maxTemp;
@@ -115,29 +130,26 @@ const espAlertSocket = () => {
                 console.log("✅ Rack Updated:", {
                     rack: rack.name,
                     updatedBy: sensorName,
-                    dominantSensor: dominantSensor.sensorName,
-                    tempV: maxTemp,
-                    humiV: maxHumi,
+                    dominantSensor: dominantSensor ? dominantSensor.sensorName : "N/A",
+                    sensorValuesCount: rack.sensorValues.length
                 });
 
-                ws.send(
-                    JSON.stringify({
-                        status: "ok",
-                        rack: rack.name,
-                        dominantSensor: dominantSensor.sensorName,
-                        values: { temperature: maxTemp, humidity: maxHumi },
-                        alerts: { tempA, humiA },
-                    })
-                );
+                // ================= Send Response =================
+                ws.send(JSON.stringify({
+                    status: "ok",
+                    rack: rack.name,
+                    dominantSensor: dominantSensor ? dominantSensor.sensorName : null,
+                    values: { temperature: maxTemp, humidity: maxHumi },
+                    alerts: { tempA, humiA },
+                }));
+
             } catch (err) {
                 console.error("🔥 WebSocket error:", err.message);
             }
         });
 
         ws.on("close", () => console.log("🔌 Hub disconnected"));
-        ws.on("error", (err) =>
-            console.error("❌ WebSocket error:", err.message)
-        );
+        ws.on("error", (err) => console.error("❌ WebSocket error:", err.message));
     });
 
     return wSocket;
