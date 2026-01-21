@@ -1,6 +1,8 @@
 const RackClusterModel = require("../models/rackClusterModel");
 const AckitModel = require("../models/ackitModel");
 const RackModel = require("../models/rackModel");
+const mongoose = require("mongoose");
+const DataCenterModel = require("../models/DataCenterModel");
 
 // ================= CREATE RACK CLUSTER =================
 
@@ -201,6 +203,55 @@ const getSingleRackCluster = async (req, res) => {
     } catch (error) {
         return res.status(500).json({
             message: "Failed to fetch rack cluster",
+            error: error.message,
+        });
+    }
+};
+
+// ================= GET RACK CLUSTERS BY DATA CENTER =================
+const getRackClustersByDataCenterId = async (req, res) => {
+    try {
+        const { dataCenterId } = req.params;
+
+        if (!dataCenterId) {
+            return res.status(400).json({
+                message: "Data center ID is required",
+            });
+        }
+
+        // ----------- VALIDATE OBJECT ID -----------
+        if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
+            return res.status(400).json({
+                message: "Invalid data center ID",
+            });
+        }
+
+        //------------ CHECK DATA-CENTER IN DB---------
+        const existingDatacenter = await DataCenterModel.findById(dataCenterId);
+        if (!existingDatacenter) {
+            return res.status(404).json({ message: "Data-Center Not Found" })
+        }
+
+        // ----------- FETCH CLUSTERS -----------
+        const clusters = await RackClusterModel.find({
+            dataCenterId,
+        }).sort({ createdAt: -1 });
+
+        if (!clusters.length) {
+            return res.status(404).json({
+                message: "No rack clusters found for this data center",
+            });
+        }
+
+        return res.status(200).json({
+            message: "Rack clusters fetched successfully",
+            totalClusters: clusters.length,
+            dataCenterId,
+            clusters,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "Failed to fetch rack clusters",
             error: error.message,
         });
     }
@@ -422,5 +473,6 @@ module.exports = {
     getAllRackClusters,
     getSingleRackCluster,
     updateRackCluster,
-    deleteRackCluster
+    deleteRackCluster,
+    getRackClustersByDataCenterId
 }
