@@ -5,7 +5,6 @@ const RackClusterSchema = new mongoose.Schema(
         name: {
             type: String,
             required: true,
-            unique: true,
             trim: true,
         },
 
@@ -15,10 +14,19 @@ const RackClusterSchema = new mongoose.Schema(
             required: true,
         },
 
-        ackitName: {
-            type: String,
-            required: true,
-            trim: true,
+        ackit: {
+
+            _id: false,
+
+            _id: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "ackit",
+                required: true,
+            },
+            name: {
+                type: String,
+                required: true,
+            },
         },
 
         racks: [
@@ -51,6 +59,11 @@ const RackClusterSchema = new mongoose.Schema(
     },
 
     { timestamps: true }
+);
+
+RackClusterSchema.index(
+    { name: 1, dataCenterId: 1 },
+    { unique: true }
 );
 
 const RackClusterModel = mongoose.model("rackClusters", RackClusterSchema);

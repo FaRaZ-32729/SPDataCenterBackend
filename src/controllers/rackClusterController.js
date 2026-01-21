@@ -74,9 +74,94 @@ const evaluateRackCluster = require("../utils/evaluateRackCluster");
 //     }
 // };
 
+// const createRackCluster = async (req, res) => {
+//     try {
+//         const { name, dataCenterId, ackitName, racks } = req.body;
+
+//         // ----------- BASIC VALIDATIONS -----------
+//         if (!name) {
+//             return res.status(400).json({ message: "Cluster name is required" });
+//         }
+
+//         if (!dataCenterId) {
+//             return res
+//                 .status(400)
+//                 .json({ message: "Data center ID is required" });
+//         }
+
+//         if (!ackitName) {
+//             return res.status(400).json({ message: "Ackit name is required" });
+//         }
+
+//         if (!Array.isArray(racks) || racks.length === 0) {
+//             return res
+//                 .status(400)
+//                 .json({ message: "At least one rack ID is required" });
+//         }
+
+//         // ----------- VALIDATE DATA CENTER ID -----------
+//         if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
+//             return res.status(400).json({
+//                 message: "Invalid data center ID",
+//             });
+//         }
+
+//         // ----------- VALIDATE ACKIT NAME -----------
+//         const ackitExists = await AckitModel.findOne({ name: ackitName });
+//         if (!ackitExists) {
+//             return res.status(404).json({
+//                 message: "Ackit with this name does not exist",
+//             });
+//         }
+
+//         // ----------- VALIDATE RACK IDS & DATA CENTER MATCH -----------
+//         const rackObjects = await RackModel.find({
+//             _id: { $in: racks },
+//             "dataCenter.id": dataCenterId, // 🔥 ensure same DC
+//         });
+
+//         if (rackObjects.length !== racks.length) {
+//             return res.status(404).json({
+//                 message:
+//                     "One or more racks are invalid or do not belong to this data center",
+//             });
+//         }
+
+//         // ----------- BUILD RACK ARRAY (_id + name) -----------
+//         const racksWithNames = rackObjects.map((rack) => ({
+//             _id: rack._id,
+//             name: rack.name,
+//         }));
+
+//         // ----------- CREATE CLUSTER -----------
+//         const rackCluster = await RackClusterModel.create({
+//             name,
+//             dataCenterId,
+//             ackitName,
+//             racks: racksWithNames,
+//         });
+
+//         return res.status(201).json({
+//             message: "Rack cluster created successfully",
+//             data: rackCluster,
+//         });
+//     } catch (error) {
+//         if (error.code === 11000) {
+//             return res.status(409).json({
+//                 message: "Rack cluster with this name already exists",
+//             });
+//         }
+
+//         return res.status(500).json({
+//             message: "Failed to create rack cluster",
+//             error: error.message,
+//         });
+//     }
+// };
+
 const createRackCluster = async (req, res) => {
     try {
-        const { name, dataCenterId, ackitName, racks } = req.body;
+        const { name, dataCenterId, ackitId, racks } = req.body;
 
         // ----------- BASIC VALIDATIONS -----------
         if (!name) {
@@ -84,40 +169,40 @@ const createRackCluster = async (req, res) => {
         }
 
         if (!dataCenterId) {
-            return res
-                .status(400)
-                .json({ message: "Data center ID is required" });
+            return res.status(400).json({ message: "Data center ID is required" });
         }
 
-        if (!ackitName) {
-            return res.status(400).json({ message: "Ackit name is required" });
+        if (!ackitId) {
+            return res.status(400).json({ message: "Ackit ID is required" });
         }
 
         if (!Array.isArray(racks) || racks.length === 0) {
-            return res
-                .status(400)
-                .json({ message: "At least one rack ID is required" });
+            return res.status(400).json({
+                message: "At least one rack ID is required",
+            });
         }
 
         // ----------- VALIDATE DATA CENTER ID -----------
         if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
-            return res.status(400).json({
-                message: "Invalid data center ID",
-            });
+            return res.status(400).json({ message: "Invalid data center ID" });
         }
 
-        // ----------- VALIDATE ACKIT NAME -----------
-        const ackitExists = await AckitModel.findOne({ name: ackitName });
-        if (!ackitExists) {
+        // ----------- VALIDATE ACKIT ID -----------
+        if (!mongoose.Types.ObjectId.isValid(ackitId)) {
+            return res.status(400).json({ message: "Invalid ackit ID" });
+        }
+
+        const ackit = await AckitModel.findById(ackitId);
+        if (!ackit) {
             return res.status(404).json({
-                message: "Ackit with this name does not exist",
+                message: "Ackit not found",
             });
         }
 
-        // ----------- VALIDATE RACK IDS & DATA CENTER MATCH -----------
+        // ----------- VALIDATE RACKS -----------
         const rackObjects = await RackModel.find({
             _id: { $in: racks },
-            "dataCenter.id": dataCenterId, // 🔥 ensure same DC
+            "dataCenter.id": dataCenterId,
         });
 
         if (rackObjects.length !== racks.length) {
@@ -127,7 +212,6 @@ const createRackCluster = async (req, res) => {
             });
         }
 
-        // ----------- BUILD RACK ARRAY (_id + name) -----------
         const racksWithNames = rackObjects.map((rack) => ({
             _id: rack._id,
             name: rack.name,
@@ -137,7 +221,10 @@ const createRackCluster = async (req, res) => {
         const rackCluster = await RackClusterModel.create({
             name,
             dataCenterId,
-            ackitName,
+            ackit: {
+                _id: ackit._id,
+                name: ackit.name,
+            },
             racks: racksWithNames,
         });
 
@@ -148,7 +235,8 @@ const createRackCluster = async (req, res) => {
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({
-                message: "Rack cluster with this name already exists",
+                message:
+                    "Rack cluster with this name already exists in this data center",
             });
         }
 
@@ -158,6 +246,7 @@ const createRackCluster = async (req, res) => {
         });
     }
 };
+
 
 // ================= GET ALL RACK CLUSTERS =================
 const getAllRackClusters = async (req, res) => {
@@ -339,18 +428,117 @@ const getRackClustersByDataCenterId = async (req, res) => {
 //     }
 // };
 
+// const updateRackCluster = async (req, res) => {
+//     try {
+//         const { id } = req.params;
+//         const { name, ackitName, racks, dataCenterId } = req.body;
+
+//         if (!id) {
+//             return res
+//                 .status(400)
+//                 .json({ message: "Rack cluster ID is required" });
+//         }
+
+//         // ----------- FETCH EXISTING CLUSTER -----------
+//         const existingCluster = await RackClusterModel.findById(id);
+//         if (!existingCluster) {
+//             return res.status(404).json({
+//                 message: "Rack cluster not found",
+//             });
+//         }
+
+//         // ----------- VALIDATE DATA CENTER ID (IF PROVIDED) -----------
+//         let finalDataCenterId = existingCluster.dataCenterId;
+
+//         if (dataCenterId) {
+//             if (!mongoose.Types.ObjectId.isValid(dataCenterId)) {
+//                 return res.status(400).json({
+//                     message: "Invalid data center ID",
+//                 });
+//             }
+//             finalDataCenterId = dataCenterId;
+//         }
+
+//         // ----------- VALIDATE ACKIT NAME (IF PROVIDED) -----------
+//         if (ackitName) {
+//             const ackitExists = await AckitModel.findOne({ name: ackitName });
+//             if (!ackitExists) {
+//                 return res.status(404).json({
+//                     message: "Ackit with this name does not exist",
+//                 });
+//             }
+//         }
+
+//         // ----------- VALIDATE RACKS (IF PROVIDED) -----------
+//         let racksWithNames;
+
+//         if (racks) {
+//             if (!Array.isArray(racks) || racks.length === 0) {
+//                 return res.status(400).json({
+//                     message: "Racks must be a non-empty array",
+//                 });
+//             }
+
+//             const rackObjects = await RackModel.find({
+//                 _id: { $in: racks },
+//                 "dataCenter.id": finalDataCenterId, // 🔥 enforce same DC
+//             });
+
+//             if (rackObjects.length !== racks.length) {
+//                 return res.status(404).json({
+//                     message:
+//                         "One or more racks are invalid or do not belong to this data center",
+//                 });
+//             }
+
+//             racksWithNames = rackObjects.map((rack) => ({
+//                 _id: rack._id,
+//                 name: rack.name,
+//             }));
+//         }
+
+//         // ----------- UPDATE CLUSTER -----------
+//         const updatedCluster = await RackClusterModel.findByIdAndUpdate(
+//             id,
+//             {
+//                 ...(name && { name }),
+//                 ...(ackitName && { ackitName }),
+//                 ...(dataCenterId && { dataCenterId: finalDataCenterId }),
+//                 ...(racksWithNames && { racks: racksWithNames }),
+//             },
+//             { new: true, runValidators: true }
+//         );
+
+//         return res.status(200).json({
+//             message: "Rack cluster updated successfully",
+//             data: updatedCluster,
+//         });
+//     } catch (error) {
+//         if (error.code === 11000) {
+//             return res.status(409).json({
+//                 message: "Rack cluster with this name already exists",
+//             });
+//         }
+
+//         return res.status(500).json({
+//             message: "Failed to update rack cluster",
+//             error: error.message,
+//         });
+//     }
+// };
+
+
 const updateRackCluster = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, ackitName, racks, dataCenterId } = req.body;
+        const { name, ackitId, racks, dataCenterId } = req.body;
 
         if (!id) {
-            return res
-                .status(400)
-                .json({ message: "Rack cluster ID is required" });
+            return res.status(400).json({
+                message: "Rack cluster ID is required",
+            });
         }
 
-        // ----------- FETCH EXISTING CLUSTER -----------
         const existingCluster = await RackClusterModel.findById(id);
         if (!existingCluster) {
             return res.status(404).json({
@@ -358,7 +546,7 @@ const updateRackCluster = async (req, res) => {
             });
         }
 
-        // ----------- VALIDATE DATA CENTER ID (IF PROVIDED) -----------
+        // ----------- DATA CENTER -----------
         let finalDataCenterId = existingCluster.dataCenterId;
 
         if (dataCenterId) {
@@ -370,17 +558,30 @@ const updateRackCluster = async (req, res) => {
             finalDataCenterId = dataCenterId;
         }
 
-        // ----------- VALIDATE ACKIT NAME (IF PROVIDED) -----------
-        if (ackitName) {
-            const ackitExists = await AckitModel.findOne({ name: ackitName });
-            if (!ackitExists) {
-                return res.status(404).json({
-                    message: "Ackit with this name does not exist",
+        // ----------- ACKIT VALIDATION -----------
+        let ackitObject;
+
+        if (ackitId) {
+            if (!mongoose.Types.ObjectId.isValid(ackitId)) {
+                return res.status(400).json({
+                    message: "Invalid ackit ID",
                 });
             }
+
+            const ackit = await AckitModel.findById(ackitId);
+            if (!ackit) {
+                return res.status(404).json({
+                    message: "Ackit not found",
+                });
+            }
+
+            ackitObject = {
+                _id: ackit._id,
+                name: ackit.name,
+            };
         }
 
-        // ----------- VALIDATE RACKS (IF PROVIDED) -----------
+        // ----------- RACK VALIDATION -----------
         let racksWithNames;
 
         if (racks) {
@@ -392,7 +593,7 @@ const updateRackCluster = async (req, res) => {
 
             const rackObjects = await RackModel.find({
                 _id: { $in: racks },
-                "dataCenter.id": finalDataCenterId, // 🔥 enforce same DC
+                "dataCenter.id": finalDataCenterId,
             });
 
             if (rackObjects.length !== racks.length) {
@@ -408,13 +609,13 @@ const updateRackCluster = async (req, res) => {
             }));
         }
 
-        // ----------- UPDATE CLUSTER -----------
+        // ----------- UPDATE -----------
         const updatedCluster = await RackClusterModel.findByIdAndUpdate(
             id,
             {
                 ...(name && { name }),
-                ...(ackitName && { ackitName }),
                 ...(dataCenterId && { dataCenterId: finalDataCenterId }),
+                ...(ackitObject && { ackit: ackitObject }),
                 ...(racksWithNames && { racks: racksWithNames }),
             },
             { new: true, runValidators: true }
@@ -427,7 +628,8 @@ const updateRackCluster = async (req, res) => {
     } catch (error) {
         if (error.code === 11000) {
             return res.status(409).json({
-                message: "Rack cluster with this name already exists",
+                message:
+                    "Rack cluster with this name already exists in this data center",
             });
         }
 
@@ -437,6 +639,7 @@ const updateRackCluster = async (req, res) => {
         });
     }
 };
+
 
 // ================= DELETE RACK CLUSTER =================
 const deleteRackCluster = async (req, res) => {
