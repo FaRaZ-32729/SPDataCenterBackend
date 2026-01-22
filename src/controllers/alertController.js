@@ -1,89 +1,3 @@
-// // Returns alerts for all venues under an organization
-// const getAlerts = async (req, res) => {
-//     try {
-//         const { organizationId } = req.params;
-
-//         // Get all venues under this organization
-//         const venues = await venueModel.find({ organization: organizationId }).lean();
-//         if (!venues.length) return res.status(404).json({ message: "No venues found" });
-
-//         const venueIds = venues.map((v) => v._id);
-
-//         // Get all devices inside those venues
-//         const devices = await deviceModel.find({ venue: { $in: venueIds } })
-//             .populate("venue", "name")
-//             .lean();
-
-//         // Aggregate alerts per venue
-//         const result = venues.map((venue) => {
-//             const venueDevices = devices.filter(
-//                 (d) => d.venue._id.toString() === venue._id.toString()
-//             );
-
-//             // NEW ALERT LOGIC
-//             const devicesWithAlerts = venueDevices.filter(
-//                 (d) => d.temperatureAlert || d.humidityAlert || d.odourAlert
-//             );
-
-//             const temperatureAlerts = venueDevices
-//                 .filter((d) => d.temperatureAlert)
-//                 .map((d) => ({
-//                     deviceId: d.deviceId,
-//                     temperature: d.espTemprature,
-//                     humidity: d.espHumidity
-//                 }));
-
-//             const humidityAlerts = venueDevices
-//                 .filter((d) => d.humidityAlert)
-//                 .map((d) => ({
-//                     deviceId: d.deviceId,
-//                     temperature: d.espTemprature,
-//                     humidity: d.espHumidity
-//                 }));
-
-//             const odourAlerts = venueDevices
-//                 .filter((d) => d.odourAlert)
-//                 .map((d) => ({
-//                     deviceId: d.deviceId,
-//                     temperature: d.espTemprature,
-//                     humidity: d.espHumidity
-//                 }));
-
-//             return {
-//                 venueId: venue._id,
-//                 venueName: venue.name,
-//                 totalDevices: venueDevices.length,
-
-//                 // Total active alerts in this venue
-//                 totalAlerts: devicesWithAlerts.length,
-
-//                 // Temperature alerts
-//                 temperatureAlertCount: temperatureAlerts.length,
-//                 temperatureAlertDevices: temperatureAlerts,
-
-//                 // Humidity alerts
-//                 humidityAlertCount: humidityAlerts.length,
-//                 humidityAlertDevices: humidityAlerts,
-
-//                 // Odour alerts
-//                 odourAlertCount: odourAlerts.length,
-//                 odourAlertDevices: odourAlerts,
-//             };
-//         });
-
-//         res.json({ organizationId, venues: result });
-
-//     } catch (err) {
-//         console.error("Error fetching alerts:", err.message);
-//         res.status(500).json({ message: "Server error" });
-//     }
-// };
-
-
-// module.exports = { getAlerts };
-
-
-
 const RackModel = require("../models/rackModel");
 const RackClusterModel = require("../models/rackClusterModel");
 
@@ -91,7 +5,7 @@ const getAlertsByDataCenterId = async (req, res) => {
     try {
         const { dataCenterId } = req.params;
 
-        // 1️⃣ Get all racks under this data center
+        //  Get all racks under this data center
         const racks = await RackModel.find({
             "dataCenter.id": dataCenterId,
         }).lean();
@@ -102,7 +16,7 @@ const getAlertsByDataCenterId = async (req, res) => {
             });
         }
 
-        // 2️⃣ Aggregate alerts per rack
+        // Aggregate alerts per rack
         const result = racks.map((rack) => {
             // Sensors stored in this rack
             const sensors = rack.sensorValues || [];
@@ -130,15 +44,15 @@ const getAlertsByDataCenterId = async (req, res) => {
                 totalAlerts:
                     (hasTempAlert ? 1 : 0) + (hasHumiAlert ? 1 : 0),
 
-                // 🔥 TEMPERATURE ALERT
+                // TEMPERATURE ALERT
                 tempA: hasTempAlert,
                 tempV: dominantSensor?.temperature ?? null,
 
-                // 💧 HUMIDITY ALERT
+                // HUMIDITY ALERT
                 humiA: hasHumiAlert,
                 humiV: dominantSensor?.humidity ?? null,
 
-                // 🔍 SENSOR DETAILS (OPTIONAL BUT USEFUL)
+                // SENSOR DETAILS (OPTIONAL BUT USEFUL)
                 sensors: sensors.map((s) => ({
                     sensorName: s.sensorName,
                     temperature: s.temperature,
@@ -154,7 +68,7 @@ const getAlertsByDataCenterId = async (req, res) => {
             racks: result,
         });
     } catch (err) {
-        console.error("❌ Error fetching rack alerts:", err.message);
+        console.error("Error fetching rack alerts:", err.message);
         res.status(500).json({ message: "Server error" });
     }
 };
@@ -165,7 +79,7 @@ const getAlertsByRackClusterId = async (req, res) => {
     try {
         const { rackClusterId } = req.params;
 
-        // 1️⃣ Find Rack Cluster
+        // Find Rack Cluster
         const rackCluster = await RackClusterModel.findById(rackClusterId).lean();
 
         if (!rackCluster) {
@@ -183,15 +97,15 @@ const getAlertsByRackClusterId = async (req, res) => {
             });
         }
 
-        // 2️⃣ Extract rack IDs from cluster
+        // Extract rack IDs from cluster
         const rackIds = rackCluster.racks.map((r) => r._id);
 
-        // 3️⃣ Fetch racks
+        // Fetch racks
         const racks = await RackModel.find({
             _id: { $in: rackIds },
         }).lean();
 
-        // 4️⃣ Build response
+        // Build response
         const result = racks.map((rack) => {
             const sensors = rack.sensorValues || [];
 
@@ -236,7 +150,7 @@ const getAlertsByRackClusterId = async (req, res) => {
             racks: result,
         });
     } catch (err) {
-        console.error("❌ Error fetching rack cluster alerts:", err.message);
+        console.error("Error fetching rack cluster alerts:", err.message);
         res.status(500).json({ message: "Server error" });
     }
 };

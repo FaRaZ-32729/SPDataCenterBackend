@@ -31,19 +31,19 @@ const createRack = async (req, res) => {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // 🔹 Check DataCenter exists
+        // Check DataCenter exists
         const dataCenter = await DataCenterModel.findById(dataCenterId);
         if (!dataCenter) {
             return res.status(404).json({ message: "Data center not found" });
         }
 
-        // 🔹 Check Hub exists
+        // Check Hub exists
         const hub = await HubModel.findById(hubId);
         if (!hub) {
             return res.status(404).json({ message: "Hub not found" });
         }
 
-        // 🔒 Rack name uniqueness inside same DataCenter
+        // Rack name uniqueness inside same DataCenter
         const existingRack = await RackModel.findOne({
             "dataCenter.id": dataCenterId,
             name,
@@ -55,7 +55,7 @@ const createRack = async (req, res) => {
             });
         }
 
-        // 🔹 Validate Sensors (exist + linked to hub)
+        // Validate Sensors (exist + linked to hub)
         const sensors = await SensorModel.find({
             _id: { $in: sensorIds },
             hubId,
@@ -67,7 +67,7 @@ const createRack = async (req, res) => {
             });
         }
 
-        // 🔹 Validate conditions
+        // Validate conditions
         if (!Array.isArray(conditions) || conditions.length === 0) {
             return res.status(400).json({ message: "Invalid condition format" });
         }
@@ -84,7 +84,7 @@ const createRack = async (req, res) => {
             }
         }
 
-        // 🔹 Create Rack (NEW STRUCTURE)
+        // Create Rack (NEW STRUCTURE)
         const rack = await RackModel.create({
             name,
 
@@ -254,7 +254,7 @@ const updateRack = async (req, res) => {
             conditions,
         } = req.body;
 
-        // 🔍 Check Rack exists
+        // Check Rack exists
         const rack = await RackModel.findById(id);
         if (!rack) {
             return res.status(404).json({ message: "Rack not found" });

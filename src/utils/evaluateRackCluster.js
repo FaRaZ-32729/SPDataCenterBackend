@@ -4,17 +4,20 @@ const AckitModel = require("../models/ackitModel");
 
 const evaluateRackCluster = async (rackId) => {
 
-    // 1️⃣ Find cluster containing this rack
+    // Find cluster containing this rack
     const cluster = await RackClusterModel.findOne({
         "racks._id": rackId,
     });
 
+
+
     if (!cluster) return null;
 
-    // 2️⃣ Load racks
+    // Load racks
     const racks = await RackModel.find({
         _id: { $in: cluster.racks.map(r => r._id) },
     });
+
 
     let tempSum = 0;
     let humiSum = 0;
@@ -30,7 +33,8 @@ const evaluateRackCluster = async (rackId) => {
             }
         });
     });
-    
+
+    // Collects Only Dominant Sensor values
     // racks.forEach(rack => {
     //     if (rack.tempV != null) {
     //         tempSum += rack.tempV;
@@ -44,11 +48,11 @@ const evaluateRackCluster = async (rackId) => {
     const meanTemp = +(tempSum / count).toFixed(2);
     const meanHumi = +(humiSum / count).toFixed(2);
 
-    // 4️⃣ Load Ackit
-    const ackit = await AckitModel.findOne({ name: cluster.ackitName });
+    // Load Ackit
+    const ackit = await AckitModel.findOne({ _id: cluster.ackit._id });
     if (!ackit) return null;
 
-    // 5️⃣ Evaluate condition
+    // Evaluate condition
     let ackitStatus = false;
 
     if (ackit.condition.type === "temp") {
@@ -58,7 +62,7 @@ const evaluateRackCluster = async (rackId) => {
                 : meanTemp < ackit.condition.value;
     }
 
-    // 6️⃣ Persist cluster state (optional)
+    // Persist cluster state (optional)
     await RackClusterModel.updateOne(
         { _id: cluster._id },
         {

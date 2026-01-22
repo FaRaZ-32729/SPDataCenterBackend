@@ -226,7 +226,6 @@ const updateUserProfile = async (req, res) => {
     }
 };
 
-
 //delete user
 const deleteUser = async (req, res) => {
     try {
@@ -245,7 +244,6 @@ const deleteUser = async (req, res) => {
         res.status(500).json({ message: "Error deleting user" });
     }
 };
-
 
 // add new data center to user's dataCenters array
 const addDataCenterToUser = async (req, res) => {
@@ -310,7 +308,6 @@ const addDataCenterToUser = async (req, res) => {
     }
 };
 
-
 // remove a data center from user's dataCenters array
 const removeDataCenterFromUser = async (req, res) => {
     try {
@@ -362,7 +359,6 @@ const removeDataCenterFromUser = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-
 
 // get users by data center id
 const getUsersByDataCenterId = async (req, res) => {
@@ -447,7 +443,6 @@ const updateAdminTimer = async (req, res) => {
         return res.status(500).json({ message: "Server error" });
     }
 };
-
 
 // get users status
 const getUserStatus = async (req, res) => {

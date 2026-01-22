@@ -51,7 +51,7 @@ const registerAdmin = async (req, res) => {
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-
+// api to create user
 const createUser = async (req, res) => {
     try {
         const { name, email, dataCenters } = req.body;
