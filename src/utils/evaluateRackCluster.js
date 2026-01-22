@@ -48,27 +48,27 @@ const evaluateRackCluster = async (rackId) => {
     const meanTemp = +(tempSum / count).toFixed(2);
     const meanHumi = +(humiSum / count).toFixed(2);
 
+
     // Load Ackit
     const ackit = await AckitModel.findOne({ _id: cluster.ackit._id });
     if (!ackit) return null;
 
     // Evaluate condition
-    let ackitStatus = false;
+    let desiredAcStatus = false;
 
     if (ackit.condition.type === "temp") {
-        ackitStatus =
+        desiredAcStatus =
             ackit.condition.operator === ">"
                 ? meanTemp > ackit.condition.value
                 : meanTemp < ackit.condition.value;
     }
 
-    // Persist cluster state (optional)
+    // Update ONLY mean values
     await RackClusterModel.updateOne(
         { _id: cluster._id },
         {
             meanTemp,
             meanHumi,
-            ackitStatus,
         }
     );
 
@@ -76,7 +76,8 @@ const evaluateRackCluster = async (rackId) => {
         clusterId: cluster._id,
         meanTemp,
         meanHumi,
-        ackitStatus,
+        desiredAcStatus,
+        actualAcStatus: cluster.ackitStatus,
     };
 };
 

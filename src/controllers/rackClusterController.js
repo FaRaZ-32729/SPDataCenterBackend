@@ -373,7 +373,7 @@ const getRackClusterMean = async (req, res) => {
                 // SEND TO ESP32 ONLY IF ENABLED
                 sendAcStatusToEsp32(
                     result.clusterId,
-                    result.ackitStatus,
+                    result.desiredAcStatus,
                     result.meanTemp
                 );
             }
@@ -383,7 +383,8 @@ const getRackClusterMean = async (req, res) => {
                 cluster: result.clusterId,
                 meanTemp: result.meanTemp,
                 meanHumi: result.meanHumi,
-                ackitStatus: result.ackitStatus ? "ON" : "OFF"
+                desiredAc: result.desiredAcStatus ? "ON" : "OFF",
+                actualAc: result.actualAcStatus ? "ON" : "OFF"
             });
         }
 

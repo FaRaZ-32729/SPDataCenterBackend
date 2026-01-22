@@ -6,38 +6,38 @@ const RackModel = require("../models/rackModel");
 
 const espAlertSocket = () => {
     const wSocket = new WebSocket.Server({ noServer: true });
-    console.log("✅ WebSocket initialized");
+    console.log("ESP32 Alert WebSocket initialized");
 
     wSocket.on("connection", (ws) => {
-        console.log("📡 Hub connected");
+        console.log("Hub connected");
 
         ws.on("message", async (message) => {
             try {
                 const data = JSON.parse(message.toString());
-                console.log("📥 Data From Hub =>", data);
+                console.log("Data From Hub =>", data);
 
                 const { hubId, sensorName, temperature, humidity } = data;
                 if (!hubId || !sensorName) return;
 
-                // 1️⃣ Validate Hub
+                // Validate Hub
                 const hub = await HubModel.findById(hubId);
                 if (!hub) return;
 
-                // 2️⃣ Validate Sensor
+                // Validate Sensor
                 const sensor = await SensorModel.findOne({ hubId, sensorName });
                 if (!sensor) {
-                    console.log(`⚠️ Ignored: Sensor ${sensorName} not registered`);
+                    console.log(`Ignored: Sensor ${sensorName} not registered`);
                     return;
                 }
 
-                // 3️⃣ Find the rack that contains this sensor
+                // Find the rack that contains this sensor
                 const rack = await RackModel.findOne({
                     "hub.id": hub._id,
                     "sensors._id": sensor._id,
                 });
 
                 if (!rack) {
-                    console.log(`⚠️ Ignored: Sensor ${sensorName} not mapped to any rack`);
+                    console.log(`Ignored: Sensor ${sensorName} not mapped to any rack`);
                     return;
                 }
 
@@ -97,7 +97,7 @@ const espAlertSocket = () => {
                         "Humi:", maxHumi
                     );
                 } else {
-                    console.log("⚠️ No sensor with valid temperature found!");
+                    console.log("No sensor with valid temperature found!");
                 }
 
                 // ================= Check Conditions =================
@@ -127,7 +127,7 @@ const espAlertSocket = () => {
 
                 await rack.save();
 
-                console.log("✅ Rack Updated:", {
+                console.log("Rack Updated:", {
                     rack: rack.name,
                     updatedBy: sensorName,
                     dominantSensor: dominantSensor ? dominantSensor.sensorName : "N/A",
@@ -144,12 +144,12 @@ const espAlertSocket = () => {
                 }));
 
             } catch (err) {
-                console.error("🔥 WebSocket error:", err.message);
+                console.error("WebSocket error:", err.message);
             }
         });
 
-        ws.on("close", () => console.log("🔌 Hub disconnected"));
-        ws.on("error", (err) => console.error("❌ WebSocket error:", err.message));
+        ws.on("close", () => console.log("Hub disconnected"));
+        ws.on("error", (err) => console.error("WebSocket error:", err.message));
     });
 
     return wSocket;

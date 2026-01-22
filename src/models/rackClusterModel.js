@@ -55,6 +55,10 @@ const RackClusterSchema = new mongoose.Schema(
         ackitStatus: {
             type: Boolean,
             default: false
+        },
+        ackitStatus: {
+            type: Boolean,
+            default: false
         }
     },
 
