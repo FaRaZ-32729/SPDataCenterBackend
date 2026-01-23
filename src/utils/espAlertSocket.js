@@ -120,12 +120,24 @@ const espAlertSocket = () => {
                 });
 
                 // ================= Update Rack =================
-                rack.tempA = tempA;
-                rack.humiA = humiA;
-                rack.tempV = maxTemp;
-                rack.humiV = maxHumi;
+                // rack.tempA = tempA;
+                // rack.humiA = humiA;
+                // rack.tempV = maxTemp;
+                // rack.humiV = maxHumi;
 
-                await rack.save();
+                // await rack.save();
+                await RackModel.updateOne(
+                    { _id: rack._id },
+                    {
+                        $set: {
+                            sensorValues: newSensorValues,
+                            tempA,
+                            humiA,
+                            tempV: maxTemp,
+                            humiV: maxHumi,
+                        }
+                    }
+                );
 
                 console.log("Rack Updated:", {
                     rack: rack.name,
