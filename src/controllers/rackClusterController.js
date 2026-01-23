@@ -395,6 +395,64 @@ const getRackClusterMean = async (req, res) => {
     }
 };
 
+//===================== GET MEAN AND STATUS OF ALL RACK-CLUSTERS IN A DATA-CENTER ==============
+const getRackClusterMeansByDcId = async (req, res) => {
+    try {
+        const { dataCenterId } = req.params;
+
+        if (!dataCenterId) {
+            return res.status(400).json({ message: "dataCenterId is required" });
+        }
+
+        // Fetch all clusters for this data center
+        const clusters = await RackClusterModel.find({ dataCenterId });
+
+        if (!clusters || clusters.length === 0) {
+            return res.status(404).json({ message: "No clusters found for this data center" });
+        }
+
+        // Prepare response
+        let totalTemp = 0;
+        let totalHumi = 0;
+        let count = 0;
+
+        const clusterData = clusters.map(cluster => {
+            const { _id, name, meanTemp, meanHumi, ackitStatus } = cluster;
+
+            if (meanTemp != null) {
+                totalTemp += meanTemp;
+                count++;
+            }
+
+            if (meanHumi != null) {
+                totalHumi += meanHumi;
+            }
+
+            return {
+                id: _id,
+                name,
+                meanTemp,
+                meanHumi,
+                ackitStatus: ackitStatus ? "on" : "off",
+            };
+        });
+
+        // const overallMeanTemp = count > 0 ? Number((totalTemp / count).toFixed(2)) : null;
+        // const overallMeanHumi = clusters.length > 0 ? Number((totalHumi / clusters.length).toFixed(2)) : null;
+
+        return res.status(200).json({
+            dataCenterId,
+            clusters: clusterData,
+            // overall: {
+            //     meanTemp: overallMeanTemp,
+            //     meanHumi: overallMeanHumi,
+            // },
+        });
+    } catch (error) {
+        console.error("Cluster Stats Error:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 module.exports = {
     createRackCluster,
@@ -403,5 +461,6 @@ module.exports = {
     updateRackCluster,
     deleteRackCluster,
     getRackClustersByDataCenterId,
-    getRackClusterMean
+    getRackClusterMean,
+    getRackClusterMeansByDcId
 }

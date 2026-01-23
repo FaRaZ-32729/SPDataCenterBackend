@@ -56,10 +56,6 @@ const RackClusterSchema = new mongoose.Schema(
             type: Boolean,
             default: false
         },
-        ackitStatus: {
-            type: Boolean,
-            default: false
-        }
     },
 
     { timestamps: true }
