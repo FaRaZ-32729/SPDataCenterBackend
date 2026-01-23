@@ -55,6 +55,60 @@ const createRack = async (req, res) => {
             });
         }
 
+        // row and col validation
+
+        const rowRegex = /^r([1-9]|1[0-9]|2[0-5])$/;
+        const colRegex = /^c([1-9]|1[0-9]|2[0-5])$/;
+
+        if (!rowRegex.test(row)) {
+            return res.status(400).json({
+                message: "Invalid row format. Use r1 to r25",
+            });
+        }
+
+        if (!colRegex.test(col)) {
+            return res.status(400).json({
+                message: "Invalid column format. Use c1 to c25",
+            });
+        }
+
+
+        const rows = await RackModel.distinct("row", {
+            "dataCenter.id": dataCenterId,
+        });
+
+        if (!rows.includes(row) && rows.length >= 25) {
+            return res.status(409).json({
+                message: "This data center already has maximum 25 rows",
+            });
+        }
+
+
+        const colCountInRow = await RackModel.countDocuments({
+            "dataCenter.id": dataCenterId,
+            row,
+        });
+
+        if (colCountInRow >= 25) {
+            return res.status(409).json({
+                message: `Row ${row} already has maximum 25 columns`,
+            });
+        }
+
+        const positionExists = await RackModel.findOne({
+            "dataCenter.id": dataCenterId,
+            row,
+            col,
+        });
+
+        if (positionExists) {
+            return res.status(409).json({
+                message: `Rack already exists at row ${row}, column ${col}`,
+            });
+        }
+
+
+
         // Validate Sensors (exist + linked to hub)
         const sensors = await SensorModel.find({
             _id: { $in: sensorIds },
@@ -240,6 +294,65 @@ const getRacksByDataCenterId = async (req, res) => {
     }
 };
 
+//get booked rows and cols in data-center
+const getRackOccupancyByDataCenter = async (req, res) => {
+    try {
+        const { dataCenterId } = req.params;
+
+        if (!dataCenterId) {
+            return res.status(400).json({
+                message: "dataCenterId is required",
+            });
+        }
+
+        // Check DataCenter exists
+        const dataCenter = await DataCenterModel.findById(dataCenterId);
+        if (!dataCenter) {
+            return res.status(404).json({
+                message: "Data center not found",
+            });
+        }
+
+        // Fetch only required fields
+        const racks = await RackModel.find(
+            { "dataCenter.id": dataCenterId },
+            { row: 1, col: 1, _id: 0 }
+        );
+
+        const rowMap = {};
+
+        for (const rack of racks) {
+            if (!rowMap[rack.row]) {
+                rowMap[rack.row] = new Set();
+            }
+            rowMap[rack.row].add(rack.col);
+        }
+
+        // Convert to array format
+        const data = Object.entries(rowMap)
+            .map(([row, cols]) => ({
+                row,
+                colsBooked: Array.from(cols).sort((a, b) =>
+                    parseInt(a.slice(1)) - parseInt(b.slice(1))
+                ),
+            }))
+            .sort((a, b) =>
+                parseInt(a.row.slice(1)) - parseInt(b.row.slice(1))
+            );
+
+        return res.status(200).json({
+            dataCenterId,
+            rowsBooked: data.length,
+            data,
+        });
+    } catch (error) {
+        console.error("Rack Occupancy Error:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+        });
+    }
+};
+
 // UPDATE RACK
 const updateRack = async (req, res) => {
     try {
@@ -333,9 +446,72 @@ const updateRack = async (req, res) => {
             }));
         }
 
-        /* ---------------- ROW / COL ---------------- */
-        if (row) rack.row = row;
-        if (col) rack.col = col;
+        /* ---------------- ROW / COL UPDATE ---------------- */
+        if (row || col) {
+            const finalRow = row || rack.row;
+            const finalCol = col || rack.col;
+
+            const rowRegex = /^r([1-9]|1[0-9]|2[0-5])$/;
+            const colRegex = /^c([1-9]|1[0-9]|2[0-5])$/;
+
+            if (!rowRegex.test(finalRow)) {
+                return res.status(400).json({
+                    message: "Invalid row format. Use r1 to r25",
+                });
+            }
+
+            if (!colRegex.test(finalCol)) {
+                return res.status(400).json({
+                    message: "Invalid column format. Use c1 to c25",
+                });
+            }
+
+            const effectiveDataCenterId =
+                dataCenterId || rack.dataCenter.id;
+
+            // 🔹 DISTINCT ROW LIMIT (ignore current rack)
+            const rows = await RackModel.distinct("row", {
+                "dataCenter.id": effectiveDataCenterId,
+                _id: { $ne: rack._id },
+            });
+
+            if (!rows.includes(finalRow) && rows.length >= 25) {
+                return res.status(409).json({
+                    message: "This data center already has maximum 25 rows",
+                });
+            }
+
+            // 🔹 COLUMN LIMIT IN ROW (ignore current rack)
+            const colCountInRow = await RackModel.countDocuments({
+                "dataCenter.id": effectiveDataCenterId,
+                row: finalRow,
+                _id: { $ne: rack._id },
+            });
+
+            if (colCountInRow >= 25) {
+                return res.status(409).json({
+                    message: `Row ${finalRow} already has maximum 25 columns`,
+                });
+            }
+
+            // 🔹 POSITION CONFLICT CHECK
+            const positionExists = await RackModel.findOne({
+                "dataCenter.id": effectiveDataCenterId,
+                row: finalRow,
+                col: finalCol,
+                _id: { $ne: rack._id },
+            });
+
+            if (positionExists) {
+                return res.status(409).json({
+                    message: `Rack already exists at row ${finalRow}, column ${finalCol}`,
+                });
+            }
+
+            rack.row = finalRow;
+            rack.col = finalCol;
+        }
+
 
         /* ---------------- CONDITIONS ---------------- */
         if (conditions) {
@@ -397,5 +573,6 @@ module.exports = {
     updateRack,
     deleteRack,
     getRacksByClusterId,
-    getRacksByDataCenterId
+    getRacksByDataCenterId,
+    getRackOccupancyByDataCenter
 };

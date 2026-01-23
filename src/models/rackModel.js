@@ -70,7 +70,7 @@ const RackSchema = new mongoose.Schema(
                     },
                 },
             ],
-            default: [], // ⭐ IMPORTANT
+            default: [],
         },
 
         conditions: [
@@ -92,6 +92,21 @@ const RackSchema = new mongoose.Schema(
             },
         ],
 
+        row: {
+            type: String,
+            required: true,
+            match: /^r([1-9]|1[0-9]|2[0-5])$/,
+            index: true,
+        },
+
+        col: {
+            type: String,
+            required: true,
+            match: /^c([1-9]|1[0-9]|2[0-5])$/,
+            index: true,
+        },
+
+
         // 🔥 RACK LEVEL STATUS
         tempA: { type: Boolean, default: false },
         humiA: { type: Boolean, default: false },
@@ -100,5 +115,14 @@ const RackSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+// ONE rack per (row + col) in a datacenter
+RackSchema.index(
+    { "dataCenter.id": 1, row: 1, col: 1 },
+    { unique: true }
+);
+
+RackSchema.index({ "dataCenter.id": 1 });
+RackSchema.index({ "hub.id": 1 });
 
 module.exports = mongoose.model("racks", RackSchema);
