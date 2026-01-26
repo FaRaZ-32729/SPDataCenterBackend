@@ -24,24 +24,24 @@ const evaluateRackCluster = async (rackId) => {
     let count = 0;
 
     // Collect ALL sensor values
-    racks.forEach(rack => {
-        rack.sensorValues.forEach(sv => {
-            if (sv.temperature != null) {
-                tempSum += sv.temperature;
-                humiSum += sv.humidity;
-                count++;
-            }
-        });
-    });
+    // racks.forEach(rack => {
+    //     rack.sensorValues.forEach(sv => {
+    //         if (sv.temperature != null) {
+    //             tempSum += sv.temperature;
+    //             humiSum += sv.humidity;
+    //             count++;
+    //         }
+    //     });
+    // });
 
     // Collects Only Dominant Sensor values
-    // racks.forEach(rack => {
-    //     if (rack.tempV != null) {
-    //         tempSum += rack.tempV;
-    //         humiSum += rack.humiV;
-    //         count++;
-    //     }
-    // });
+    racks.forEach(rack => {
+        if (rack.tempV != null) {
+            tempSum += rack.tempV;
+            humiSum += rack.humiV;
+            count++;
+        }
+    });
 
     if (count === 0) return null;
 

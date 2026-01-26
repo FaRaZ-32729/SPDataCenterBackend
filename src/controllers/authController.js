@@ -185,22 +185,20 @@ const createUser = async (req, res) => {
             newUserData.timer = creator.timer;
         }
 
-        const newUser = await userModel.create(newUserData);
-
-
         // ---------------- SEND SETUP EMAIL ----------------
         const setupLink = `${process.env.FRONTEND_URL}/setup-password/${token}`;
 
-        await sendEmail(
-            newUser.email,
-            "Set up your Data Center account",
-            `
+        try {
+            await sendEmail(
+                newUserData.email,
+                "Set up your Data Center account",
+                `
             <div style="font-family: Arial, sans-serif; color: #333; background: #f5f8fa; padding: 20px; border-radius: 8px;">
                 <div style="text-align: center;">
                     <img src="https://polekit.iotfiysolutions.com/assets/logo.png" alt="DataCenter Logo" style="width: 120px; margin-bottom: 20px;" />
                 </div>
                 <h2 style="color: #0055a5;">Welcome to Data Center!</h2>
-                <p>Hello <b>${newUser.name || newUser.email}</b>,</p>
+                <p>Hello <b>${newUserData.name || newUserData.email}</b>,</p>
                 <p>Your account has been created. Please click below to set your password:</p>
 
                 <div style="text-align: center; margin: 20px 0;">
@@ -219,7 +217,16 @@ const createUser = async (req, res) => {
                 </p>
             </div>
             `
-        );
+            );
+        } catch (mailError) {
+            console.error("Email sending failed:", mailError.message);
+
+            return res.status(500).json({
+                message: "Failed to send setup email. User was NOT created.",
+            });
+        }
+
+        const newUser = await userModel.create(newUserData);
 
         // ---------------- RESPONSE ----------------
         return res.status(201).json({

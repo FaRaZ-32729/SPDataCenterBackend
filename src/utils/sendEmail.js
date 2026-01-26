@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 const sendEmail = async (to, subject, html) => {
     try {
         await transporter.sendMail({
-            from: `"Data Center" <support@odor.iotfiysolutions.com>`,
+            from: `"Data Center" <developer@iotfiysolutions.com>`,
             to,
             subject,
             html,
@@ -24,6 +24,7 @@ const sendEmail = async (to, subject, html) => {
         console.log("Email sent ✔");
     } catch (err) {
         console.error("Email error:", err);
+        throw err;
     }
 };
 

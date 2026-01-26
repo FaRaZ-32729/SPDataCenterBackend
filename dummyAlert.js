@@ -1,7 +1,7 @@
 const WebSocket = require("ws");
 
 // ================= CONFIG =================
-const HUB_ID = "696a3fd213d499c0f40ef98d";
+const HUB_ID = "697750f169772c600c6de50b";
 const WS_SERVER_URL = "ws://localhost:5053/ws/alerts";
 const SENSOR_COUNT = 15;
 const INTERVAL_MS =  10000; // 1 minute
